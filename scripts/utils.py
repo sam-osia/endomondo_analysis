@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
+import json
 
 
 def pkl_load(file_path):
@@ -23,8 +24,15 @@ def pd_load(file_path):
     print(df.shape)
     print(df.head())
 
+
+def json_load():
+    # Since the dataset downloaded is in json format, apply the following function to open the file, then transform it into a csv file.
+    reviews = []
+    with open('./data/processed_endomondoHR_proper_interpolate.json', 'r') as train_file:
+        for l in train_file:
+            reviews.append(json.loads(l.strip()))
+
+
 os.chdir('..')
 file_path = './data/endomondoHR_proper_metaData.pkl'
-# pkl_load(file_path)
-io_load(file_path)
-# pd_load(file_path)
+json_load()
