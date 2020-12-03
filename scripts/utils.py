@@ -15,12 +15,11 @@ def set_path(user):
     :return:
     '''
     if user == 'sayeh':
-        os.chdir(os.path.dirname(sys.argv[0]))
+        os.chdir('/Users/sayehbayat/Documents/GIT/endomondo_analysis/')
     elif user == 'kasra':
         os.chdir(os.chdir(os.path.dirname(sys.argv[0])))
     elif user == 'saman':
-        pass
-    os.chdir('..')
+        os.chdir('..')
 
 def pkl_load(file_path):
     with open(file_path, 'rb') as f:
@@ -57,5 +56,6 @@ def create_chunk(rows=5000):
     return df
 
 if __name__ == '__main__':
-    os.chdir('..')
+    set_path('sayeh')
+    #print(os.getcwd())
     create_chunk()

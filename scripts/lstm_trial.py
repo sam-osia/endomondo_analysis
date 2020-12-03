@@ -12,7 +12,7 @@ import os
 
 from utils import *
 
-
+#%%
 def category_layer():
     num_users = 51
     num_steps = 300
@@ -27,7 +27,7 @@ def category_layer():
     return model
 
 
-set_path('saman')
+set_path('sayeh')
 df = pd.read_json('./data/data_chunk.json')
 le = preprocessing.LabelEncoder()
 le.fit(df['userId'])
