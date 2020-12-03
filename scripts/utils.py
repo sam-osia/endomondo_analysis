@@ -7,12 +7,19 @@ import json
 import sys
 
 
+
 def set_path(user):
+    '''
+    Set path to parent directory of scripts based on user
+    :param user: name
+    :return:
+    '''
     if user == 'sayeh':
         os.chdir(os.path.dirname(sys.argv[0]))
     elif user == 'kasra':
         os.chdir(os.chdir(os.path.dirname(sys.argv[0])))
-
+    elif user == 'saman':
+        pass
     os.chdir('..')
 
 def pkl_load(file_path):
