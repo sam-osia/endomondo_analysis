@@ -37,7 +37,7 @@ def create_model():
     # link predict vector to input. We setting up a concat layer to connect other inputs later
     predict_vector = main_input
 
-    '''
+
     model = Sequential()
     model.add(Input(shape=(10, 3)))
     model.add(LSTM(100))
@@ -49,7 +49,7 @@ def create_model():
     dense_1 = Dense(500, activation='relu')(lstm)
     output = Dense(5, activation='softmax')(dense_1)
     model = keras.Model(inputs=[input], outputs=[output])
-    '''
+
 
     categorical_embedding = []
     # categorical features layers:
