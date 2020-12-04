@@ -1,11 +1,13 @@
 import tensorflow as tf
 import logging
 import os
-
+from pathlib import Path
 from utils import *
 
 
 set_path('saman')
+Path('./logs/test_logs').mkdir(parents=True, exist_ok=True)
+
 log_dir = './logs/test_logs'
 logging.basicConfig(filename=os.path.join(log_dir, 'test.log'),
                     filemode='a',
