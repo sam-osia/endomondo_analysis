@@ -20,7 +20,7 @@ def create_time_series_data(df, targetDim):
     return data, targData
 
 if __name__ == "__main__":
-    set_path("sayeh")
+    set_path("saman")
     df = pd.read_json('./data/female_bike.json')
     print(df.head())
     targetDim = 3

@@ -9,6 +9,7 @@ from tensorflow.keras.layers import Dense, Lambda, Activation, Embedding, Input,
 
 from sklearn import preprocessing
 
+from preprocess import create_time_series_data
 import numpy as np
 import pandas as pd
 import os
@@ -16,7 +17,7 @@ import os
 from utils import *
 
 
-class ContextLSTM:
+class SimpleModel:
     def __init__(self, run_id=None):
         assert run_id is not None
         self.model_name = 'simple_architecture'
@@ -59,21 +60,36 @@ class ContextLSTM:
         dense = Dense(1)(lstm)
 
         model = keras.Model(inputs=[input_layer], outputs=[dense])
+
+        model.compile(optimizer='adam',
+                      loss='mse')
+
         print(model.summary())
 
-    def run_model(self):
+        return model
+
+    def run_model(self, x, y):
         self.parse_hyperparams()
         model = self.create_model()
-        pass
+
+        logdir = get_log_dir(f'{self.model_dir}/tb_logs', 'simple_model')
+        early_stopping_cb = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
+        tensorboard_cb = keras.callbacks.TensorBoard(logdir)
+
+        model.fit(x, y,
+                  epochs=1000,
+                  callbacks=[early_stopping_cb, tensorboard_cb],
+                  validation_split=0.2)
 
     def parse_hyperparams(self):
         self.lstm_neurons = 100
         pass
 
 
-
 if __name__ == '__main__':
     set_path('saman')
-    simple_model = ContextLSTM(-1)
-    simple_model.run_model()
-    # simple_model.generate_hyperparams()
+    df = pd.read_json('./data/male_bike.json')
+    simple_model = SimpleModel(-1)
+    print('here')
+    x, y = create_time_series_data(df, 3)
+    simple_model.run_model(x, y)
