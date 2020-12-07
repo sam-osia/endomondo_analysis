@@ -6,7 +6,6 @@ import numpy as np
 import itertools
 from utils import *
 
-set_path("sayeh")
 
 def create_time_series_data(df, targetDim):
     df = df.reset_index(drop=True)
@@ -21,7 +20,8 @@ def create_time_series_data(df, targetDim):
     return data, targData
 
 if __name__ == "__main__":
-    df = pd.read_json('/Users/sayehbayat/Downloads/female_bike.json')
+    set_path("sayeh")
+    df = pd.read_json('./data/female_bike.json')
     targetDim = 3
     formatted_data, targData = create_time_series_data(df, targetDim*300)
     print("Input data shape:", formatted_data.shape)
