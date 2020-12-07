@@ -19,10 +19,12 @@ def create_time_series_data(df, targetDim):
         targData[i, :] = df["heart_rate"][i]
     return data, targData
 
+
 if __name__ == "__main__":
-    set_path("sayeh")
+    set_path("saman")
     df = pd.read_json('./data/female_bike.json')
+    print(df.head())
     targetDim = 3
-    formatted_data, targData = create_time_series_data(df, targetDim*300)
+    formatted_data, targData = create_time_series_data(df, targetDim)
     print("Input data shape:", formatted_data.shape)
     print("Output data shape:", targData.shape)
