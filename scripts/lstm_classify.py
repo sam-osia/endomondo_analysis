@@ -1,5 +1,6 @@
 import itertools
-from random import random
+import random
+import json
 
 import tensorflow as tf
 import tensorflow.keras as keras
@@ -16,24 +17,34 @@ from utils import *
 
 
 class ContextLSTM:
-
     def __init__(self, run_id=None):
-        assert run_id != None
+        assert run_id is not None
         self.model_name = 'fitrec_paper_architecture'
+        self.model_dir = f'./models/{self.model_name}'
+        self.run_id = run_id
+        mkdir(self.model_dir)
 
-    @staticmethod
-    def generate_hyperparams():
+    def generate_hyperparams(self):
         hyperparams = {
-            'embedding_dim': np.arange(3, 10),
-            'lstm_dim': np.arange(30, 101, 10),
-            'dense_context_dim': np.arange(30, 101, 10),
-            'dropout_rate': np.arange(0, 0.51, 0.25)
+            'embedding_dim': np.arange(3, 10).tolist(),
+            'lstm_dim': np.arange(30, 101, 10).tolist(),
+            'dense_context_dim': np.arange(30, 101, 10).tolist(),
+            'dropout_rate': np.arange(0, 0.51, 0.25).tolist()
         }
 
         keys, vals = zip(*hyperparams.items())
         trials = [dict(zip(keys, v)) for v in itertools.product(*vals)]
 
-        trial_params = random.sample(trials, 5)
+        trial_params = random.sample(trials, 100)
+
+        params_dir = os.path.join(self.model_dir, 'hyperparameters')
+        mkdir(params_dir)
+
+        for i, trial_param in enumerate(trial_params):
+            with open(os.path.join(params_dir, f'run{i}.json'), 'w') as f:
+
+                json.dump(trial_param, f)
+
         return
 
     def create_model(self):
@@ -110,8 +121,13 @@ class ContextLSTM:
 
 
 
+if __name__ == '__main__':
+    set_path('saman')
+    context_lstm = ContextLSTM(-1)
+    context_lstm.generate_hyperparams()
 
 
+'''
 set_path('saman')
 model = ContextLSTM.create_model()
 
@@ -127,3 +143,4 @@ print(df['userCat'])
 input = np.array(df['userCat']).astype('int64')
 shape_var = model(tf.convert_to_tensor(input))
 print(shape_var.shape)
+'''

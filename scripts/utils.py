@@ -5,7 +5,8 @@ import os
 import pickle
 import json
 import sys
-
+from pprint import pprint
+from pathlib import Path
 
 
 def set_path(user):
@@ -28,11 +29,27 @@ def pkl_load(file_path):
         print(data.shape)
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NpEncoder, self).default(obj)
+
+
 def io_load(file_path):
     with io.open(file_path, 'r', encoding='windows-1252') as f:
         for line in f:
             print(line)
             break
+
+
+def mkdir(path):
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def pd_load(file_path):
