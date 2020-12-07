@@ -88,7 +88,8 @@ class SimpleModel:
 
 if __name__ == '__main__':
     set_path('saman')
-    df = pd.read_json('./data/male_bike.json')
+    # df = pd.read_json('./data/male_bike.json')
+    df = create_chunk(None, False)
     simple_model = SimpleModel(-1)
     print('here')
     x, y = create_time_series_data(df, 3)
