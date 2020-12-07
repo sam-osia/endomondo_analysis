@@ -70,8 +70,9 @@ def create_chunk(rows=5000, save=True):
     with open('./data/processed_endomondoHR_proper_interpolate.json', 'r') as train_file:
         for i, l in enumerate(train_file):
             reviews.append(json.loads(l.strip()))
-            if i > rows and rows is not None:
-                break
+            if rows is not None:
+                if i > rows:
+                    break
 
     df = pd.DataFrame.from_dict(reviews)
 
