@@ -30,7 +30,7 @@ def process_catData(df, feature):
 
     return len(np.unique(df["userId"])), data
 if __name__ == "__main__":
-    set_path("sayeh")
+    set_path("saman")
     df = pd.read_json('./data/female_bike.json')
 
     data = []

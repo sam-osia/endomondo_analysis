@@ -7,6 +7,7 @@ import json
 import sys
 from pprint import pprint
 from pathlib import Path
+import time
 
 
 def set_path(user):
@@ -21,6 +22,11 @@ def set_path(user):
         os.chdir(os.chdir(os.path.dirname(sys.argv[0])))
     elif user == 'saman':
         os.chdir('..')
+
+
+def get_log_dir(parent_dir, run_type):
+    run_id = time.strftime(f'{run_type}_%Y_%m_%d-%H_%M_%S')
+    return os.path.join(parent_dir, run_id)
 
 def pkl_load(file_path):
     with open(file_path, 'rb') as f:
@@ -58,17 +64,20 @@ def pd_load(file_path):
     print(df.head())
 
 
-def create_chunk(rows=5000):
+def create_chunk(rows=5000, save=True):
     # Since the dataset downloaded is in json format, apply the following function to open the file, then transform it into a csv file.
     reviews = []
     with open('./data/processed_endomondoHR_proper_interpolate.json', 'r') as train_file:
         for i, l in enumerate(train_file):
             reviews.append(json.loads(l.strip()))
-            if i > rows:
-                break
+            if rows is not None:
+                if i > rows:
+                    break
 
     df = pd.DataFrame.from_dict(reviews)
-    df.to_json('./data/data_chunk.json')
+
+    if save:
+        df.to_json('./data/data_chunk.json')
 
     return df
 
