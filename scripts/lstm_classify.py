@@ -124,7 +124,7 @@ class ContextLSTM:
 if __name__ == '__main__':
     set_path('saman')
     context_lstm = ContextLSTM(-1)
-    context_lstm.generate_hyperparams()
+    context_lstm.create_model()
 
 
 '''
