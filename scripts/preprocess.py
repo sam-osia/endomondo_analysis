@@ -7,21 +7,20 @@ import itertools
 from utils import *
 
 
+
 def create_time_series_data(df, targetDim):
     df = df.reset_index(drop=True)
-    nRows = len(df)
-    print(nRows)
-    s = (nRows, targetDim*300)
-    data = np.zeros(s)
-    targData = np.zeros((nRows, 300))
-    for i in range(nRows):
-        data[i, :] = list(itertools.chain(df["time_elapsed"][i], df["distance"][i], df["altitude"][i]))
-        targData[i, :] = df["heart_rate"][i]
+    data = np.zeros((len(df), 300, 3))
+    targData = np.zeros((len(df), 300, 1))
+    for i in range(len(df)):
+        data[i, :, 0] = df["time_elapsed"][i]
+        data[i, :, 1] = df["distance"][i]
+        data[i, :, 2] = df["altitude"][i]
+        targData[i, :, 0] = df["heart_rate"][i]
     return data, targData
 
-
 if __name__ == "__main__":
-    set_path("saman")
+    set_path("sayeh")
     df = pd.read_json('./data/female_bike.json')
     print(df.head())
     targetDim = 3
