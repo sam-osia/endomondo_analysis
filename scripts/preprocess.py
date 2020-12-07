@@ -4,6 +4,7 @@ import gzip
 import pandas as pd
 import numpy as np
 import itertools
+from utils import *
 
 set_path("sayeh")
 
