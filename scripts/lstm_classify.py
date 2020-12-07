@@ -139,7 +139,6 @@ le.fit(df['userId'])
 df['userCat'] = le.transform(df['userId'])
 print(df['userCat'])
 
-
 input = np.array(df['userCat']).astype('int64')
 shape_var = model(tf.convert_to_tensor(input))
 print(shape_var.shape)

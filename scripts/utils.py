@@ -64,17 +64,19 @@ def pd_load(file_path):
     print(df.head())
 
 
-def create_chunk(rows=5000):
+def create_chunk(rows=5000, save=True):
     # Since the dataset downloaded is in json format, apply the following function to open the file, then transform it into a csv file.
     reviews = []
     with open('./data/processed_endomondoHR_proper_interpolate.json', 'r') as train_file:
         for i, l in enumerate(train_file):
             reviews.append(json.loads(l.strip()))
-            if i > rows:
+            if i > rows and rows is not None:
                 break
 
     df = pd.DataFrame.from_dict(reviews)
-    df.to_json('./data/data_chunk.json')
+
+    if save:
+        df.to_json('./data/data_chunk.json')
 
     return df
 
