@@ -24,10 +24,11 @@ def process_catData(df, feature):
 
     df = df.reset_index(drop=True)
     le = preprocessing.LabelEncoder()
-    data = np.zeros((len(df), 1, 1))
+    data = np.zeros((len(df), 300, 1))
     le.fit(df[feature])
-    data[:, 0, 0] = le.transform(df[feature])
-
+    transfrom_data = le.transform(df[feature])
+    for i in range(len(data)):
+        data[i, :, 0] = [transfrom_data[i]]*300
     return len(np.unique(df["userId"])), data
 if __name__ == "__main__":
     set_path("saman")
@@ -50,4 +51,4 @@ if __name__ == "__main__":
 
     nUser, formatted_sport = process_catData(df, 'sport')
     print("Number of Users:", nUser)
-    print("Transformed Sport:", np.unique(formatted_sport ))
+    print("Transformed Sport:", formatted_sport.shape)
