@@ -1,15 +1,12 @@
 #!/bin/bash
 
 #SBATCH -p interactive
-#SBATCH --qos nopreemption
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:1
 #SBATCH -c 4
 #SBATCH --mem=4G
 #SBATCH --job-name=test_jupyter
 #SBATCH --output=jupyter_notebook_%j.log
 #SBATCH --ntasks=1
-#SBATCH --time=04:00:00
-
 
 date;hostname;pwd
 

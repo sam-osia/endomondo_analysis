@@ -37,7 +37,7 @@ print(df['userCat'])
 
 model = category_layer()
 print(df['userCat'].shape)
-exit()
+
 input = np.array(df['userCat']).astype('int64')
 shape_var = model(tf.convert_to_tensor(input))
 print(shape_var.shape)
