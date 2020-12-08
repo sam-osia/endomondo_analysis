@@ -8,66 +8,129 @@ from utils import *
 from sklearn import preprocessing
 
 
+def create_time_series_data(df):
+    '''
 
-def create_time_series_data(df, targetDim):
+    :param df: dataframe with time-series
+    :return: temporal sequences, target sequence
+    '''
     df = df.reset_index(drop=True)
-    data = np.zeros((len(df), 300, 3))
-    targData = np.zeros((len(df), 300, 1))
-    for i in range(len(df)):
-        data[i, :, 0] = df["time_elapsed"][i]
-        data[i, :, 1] = df["distance"][i]
-        data[i, :, 2] = df["altitude"][i]
-        targData[i, :, 0] = df["tar_heart_rate"][i]
+
+    data = np.dstack([np.array(df["time_elapsed"].tolist()),
+                      np.array(df["distance"].tolist()),
+                      np.array(df["altitude"].tolist())])
+    targData = np.array(df["tar_heart_rate"].tolist()).reshape(-1, 300, 1)
+
     return data, targData
 
 def process_catData(df, feature):
+    '''
 
+    :param df: dataframe
+    :param feature: (str) categorical feature to be processed
+    :return: processed and reshaped feature
+    '''
     df = df.reset_index(drop=True)
     le = preprocessing.LabelEncoder()
-    data = np.zeros((len(df), 300, 1))
     le.fit(df[feature])
     transfrom_data = le.transform(df[feature])
-    for i in range(len(data)):
-        data[i, :, 0] = [transfrom_data[i]]*300
-    return len(np.unique(df["userId"])), data
+    return np.tile(transfrom_data, (300, 1)).T.reshape(-1, 300, 1)
 
-def scaleData(data, feature, zMultiple=1):
+def find_user_workouts(wid, df):
+
+    w_df = df.loc[lambda df: df['id'] == wid]
+    uid = w_df['userId'].tolist()[0]
+    t = w_df['timestamp'].tolist()[0][0]
+
+    u_df = df.loc[lambda df: df['userId'] == uid][:]
+    u_df['start'] = u_df['timestamp'].apply(lambda x: x[0])
+
+    myList = list(zip(u_df.start, u_df.id))
+    myList = sorted(myList, key=lambda x: x[0])
+
+    idx = myList.index((t, wid))
+
+    if idx > 0:
+        return myList[idx-1][1]
+    else:
+        return None
+
+def time_since_last(wid, df):
+    prevWid = df[df["id"] == wid]["prevId"].values[0]
+    t = np.NaN
+    if prevWid > 0:
+        timePrev = np.array(df.loc[lambda df: df['id'] == prevWid]['timestamp'])[0][0]
+        timeCurr = np.array(df.loc[lambda df: df['id'] == wid]['timestamp'])[0][0]
+        t = timeCurr - timePrev
+    return t
+
+
+def prev_wid(df):
+    return df['id'].apply(lambda x: find_user_workouts(x, df))
+
+def scaling (row, mean, std, zMultiple=1):
+    row = np.array(row)
+    row -= mean
+    row /= std
+    row *= zMultiple
+    return row.tolist()
+
+def scaleData(df, feature):
     flat_data = list(itertools.chain.from_iterable(df[feature].values.flatten()))
     mean, std = np.mean(flat_data), np.std(flat_data)
-    diff = [d - mean for d in data[feature]]
-    zScore = [d / std for d in diff]
-    scaled_array = np.array([x * zMultiple for x in zScore])
-    return scaled_array.reshape(len(data), 300)
+    scaled_feat = df[feature].apply(scaling, args=(mean, std))
+    return scaled_feat
 
-def clean_time(data):
-    for i, row in data.iterrows():
-        time = np.array(row.timestamp)
-        time -= time[0]
-        data.loc[i, 'timestamp'] = list(time)
+def clean_time(row):
+    row = np.array(row)
+    row -= row[0]
+    return row
+
+def curr_preprocess(df):
+    for feature in ["time_elapsed", "distance", "altitude"]:
+        df[feature] = scaleData(df, feature)
+    seqs, targData = create_time_series_data(df)
+
+
+    input_gender = process_catData(df, 'gender')
+    input_sport = process_catData(df, 'sport')
+
+    df['prevId'] = prev_wid(df)
+    time_last = df['id'].apply(lambda x: time_since_last(x, df))
+    input_time_last = np.tile(time_last, (300, 1)).T.reshape(-1, 300, 1)
+
+    mergeDF = prev_dataframe(df)
+    prevData = prev_time_series_data(mergeDF)
+    return seqs, input_gender, input_sport, input_time_last, prevData, targData
+
+def prev_dataframe(df):
+    #df["prevID"] = prev_wid(df)
+    df2 = df[["time_elapsed", "distance", "altitude", "tar_heart_rate", "id"]][:]
+    df2.rename(columns={"time_elapsed": "prev_time_elapsed",
+                        "distance": "prev_distance",
+                        "altitude": "prev_altitude",
+                        "tar_heart_rate": "prev_tar_heart_rate",
+                        "id": "id"}, inplace=True)
+    prevDf = pd.DataFrame({"pid": df["prevId"]})
+    prevDf = prevDf.merge(df2, left_on="pid", right_on="id")
+    mergeDF = df.merge(prevDf, left_on="prevId", right_on="pid")
+    return mergeDF
+
+def prev_time_series_data(mergeDF):
+    data = np.dstack([np.array(mergeDF["prev_time_elapsed"].tolist()),
+                      np.array(mergeDF["prev_distance"].tolist()),
+                      np.array(mergeDF["prev_altitude"].tolist()),
+                      np.array(mergeDF["prev_tar_heart_rate"].tolist())])
     return data
+
 if __name__ == "__main__":
     set_path("sayeh")
     df = pd.read_json('./data/female_bike.json')
-    print(df.columns)
+    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
+    print(seqs.shape)
+    print(input_gender.shape)
+    print(input_sport.shape)
+    print(input_time_last.shape)
+    print(prevData.shape)
+    exit()
 
-    data = []
-    #with open('./data/processed_endomondoHR_proper_interpolate.json', 'r') as train_file:
-    #    for l in train_file:
-    #        data.append(json.loads(l.strip()))
-    #df = pd.DataFrame.from_dict(data)
-
-    targetDim = 3
-    formatted_data, targData = create_time_series_data(df, targetDim)
-    print("Input data shape:", formatted_data.shape)
-    print("Output data shape:", targData.shape)
-
-    nUser, formatted_gender = process_catData(df, 'gender')
-    print("Number of Users:", nUser)
-    print("Transformed Gender:", formatted_gender)
-
-    nUser, formatted_sport = process_catData(df, 'sport')
-    print("Number of Users:", nUser)
-    print("Transformed Sport:", formatted_sport.shape)
-
-    scaled_speed = scaleData(df, 'tar_derived_speed', zMultiple=1)
-    print(scaled_speed.shape)
