@@ -22,6 +22,17 @@ def create_time_series_data(df):
 
     return data, targData
 
+def create_time_series_1D(df, feature):
+    '''
+
+    :param df: dataframe with time-series
+    :return: temporal sequences, target sequence
+    '''
+    df = df.reset_index(drop=True)
+    targData = np.array(df[feature].tolist()).reshape(-1, 300, 1)
+
+    return targData
+
 def process_catData(df, feature):
     '''
 
@@ -92,18 +103,22 @@ def curr_preprocess(df):
 
     for feature in ["tar_derived_speed", "altitude", "tar_heart_rate"]:
         df[feature] = scaleData(df, feature)
-
+    print(len(df))
     df = remove_first_workout(df)
+    print(len(df))
     df.reset_index(drop=True, inplace=True)
 
-    seqs, targData = create_time_series_data(df)
+    #seqs, targData = create_time_series_data(df)
+    input_speed = create_time_series_1D(df, 'tar_derived_speed')
+    input_alt = create_time_series_1D(df, 'altitude')
+    targData = create_time_series_1D(df, 'tar_heart_rate')
 
     input_gender = process_catData(df, 'gender')
     input_sport = process_catData(df, 'sport')
+    input_user = process_catData(df, 'userId')
     input_time_last = np.tile(df.time_last, (300, 1)).T.reshape(-1, 300, 1)
-
     prevData = prev_time_series_data(df)
-    return seqs, input_gender, input_sport, input_time_last, prevData, targData
+    return input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData
 
 
 def prev_dataframe(df):
@@ -146,12 +161,12 @@ def remove_first_workout(df):
 if __name__ == "__main__":
     set_path("sayeh")
     df = pd.read_json('./data/female_bike.json')
-    newDf = remove_first_workout(df)
-    print(newDf.shape)
+    #newDf = remove_first_workout(df)
+    #print(newDf.shape)
     print(df.shape)
     print(len(df.userId.unique()))
-    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(newDf)
-    print(seqs.shape)
+    input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = curr_preprocess(df)
+    print(input_speed.shape)
     print(input_gender.shape)
     print(input_sport.shape)
     print(input_time_last)
