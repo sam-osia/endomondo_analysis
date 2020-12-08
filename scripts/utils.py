@@ -8,14 +8,10 @@ import sys
 from pprint import pprint
 from pathlib import Path
 import time
+import matplotlib.pyplot as plt
 
 
 def set_path(user):
-    '''
-    Set path to parent directory of scripts based on user
-    :param user: name
-    :return:
-    '''
     if user == 'sayeh':
         os.chdir('/Users/sayehbayat/Documents/GIT/endomondo_analysis/')
     elif user == 'kasra':
@@ -24,8 +20,17 @@ def set_path(user):
         os.chdir('..')
 
 
-def get_log_dir(parent_dir, run_type):
-    run_id = time.strftime(f'{run_type}_%Y_%m_%d-%H_%M_%S')
+def override(f):
+    return f
+
+
+def get_log_dir(parent_dir, model_name):
+    run_id = time.strftime(f'{model_name}_%Y_%m_%d-%H_%M_%S')
+    return os.path.join(parent_dir, run_id)
+
+
+def get_save_dir(parent_dir, model_name):
+    run_id = time.strftime(f'{model_name}_%Y_%m_%d-%H_%M_%S.h5')
     return os.path.join(parent_dir, run_id)
 
 def pkl_load(file_path):

@@ -8,6 +8,7 @@ from tensorflow.keras.models import Sequential, load_model, save_model
 from tensorflow.keras.layers import Dense, Lambda, Activation, Embedding, Input, Dropout, LSTM, concatenate
 
 from sklearn import preprocessing
+from sklearn.utils import shuffle
 
 from preprocess import create_time_series_data
 import numpy as np
@@ -73,7 +74,7 @@ class SimpleModel:
         model = self.create_model()
 
         logdir = get_log_dir(f'{self.model_dir}/tb_logs', 'simple_model')
-        early_stopping_cb = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
+        early_stopping_cb = keras.callbacks.EarlyStopping(patience=3, restore_best_weights=True)
         tensorboard_cb = keras.callbacks.TensorBoard(logdir)
 
         model.fit(x, y,
@@ -88,8 +89,27 @@ class SimpleModel:
 
 if __name__ == '__main__':
     set_path('saman')
-    # df = pd.read_json('./data/male_bike.json')
-    df = create_chunk(None, False)
+    data_names = ['male_run',
+                  'female_run',
+                  'male_bike',
+                  'female_bike']
+
+    df = None
+    for data_name in data_names:
+        print(f'./data/{data_name}.json')
+        df_temp = pd.read_json(f'./data/{data_name}.json')
+        if 'female' not in data_name:
+            df_temp = df_temp.sample(frac=0.5)
+        if df is None:
+            df = df_temp
+        else:
+            df = pd.concat([df, df_temp])
+        print(len(df_temp))
+        print(len(df))
+        print()
+
+    df = shuffle(df)
+
     simple_model = SimpleModel(-1)
     print('here')
     x, y = create_time_series_data(df, 3)

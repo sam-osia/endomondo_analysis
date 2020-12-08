@@ -1,95 +1,151 @@
-import itertools
-import random
-import json
-
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.keras.models import Sequential, load_model, save_model
 from tensorflow.keras.layers import Dense, Lambda, Activation, Embedding, Input, Dropout, LSTM, concatenate
 
 from sklearn import preprocessing
+from sklearn.utils import shuffle
 
-from preprocess import create_time_series_data
 import numpy as np
 import pandas as pd
 import os
 
+from base_model import BaseModel
+from preprocess import *
 from utils import *
 
 
-class SimpleModel:
-    def __init__(self, run_id=None):
-        assert run_id is not None
-        self.model_name = 'simple_architecture'
-        self.model_dir = f'./models/{self.model_name}'
-        self.run_id = run_id
-        mkdir(self.model_dir)
+class MoreComplicatedModel(BaseModel):
+    def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False):
+        super(MoreComplicatedModel, self).__init__('more_complicated', run_id, df_paths, generate_hyperparams)
 
-    def generate_hyperparams(self):
-        hyperparams = {
+        self.hyperparams_range = {
             'lstm_dim': np.arange(30, 101, 10).tolist(),
             'dense_context_dim': np.arange(30, 101, 10).tolist(),
             'dropout_rate': np.arange(0, 0.51, 0.25).tolist()
         }
 
-        keys, vals = zip(*hyperparams.items())
-        trials = [dict(zip(keys, v)) for v in itertools.product(*vals)]
+        self.testing = testing
+        if generate_hyperparams:
+            self.generate_hyperparams()
 
-        trial_params = random.sample(trials, 100)
+    def create_model(self, categorical_features, embedding_dim, lstm_neurons, dense_neurons, **kwargs):
+        num_steps = 300
 
-        params_dir = os.path.join(self.model_dir, 'hyperparameters')
-        mkdir(params_dir)
+        # initialize array that the model expects as an input
+        user_inputs = []
 
-        for i, trial_param in enumerate(trial_params):
-            with open(os.path.join(params_dir, f'run{i}.json'), 'w') as f:
-                json.dump(trial_param, f)
+        predict_layers = []
+        # categorical features layers:
+        for category in categorical_features:
+            input = Input(shape=(num_steps, 1), name=f'{category}_input')
+            user_inputs.append(input)
+            embedding = Embedding(input_dim=2, output_dim=embedding_dim, name=f'{category}_embedding')(input)
+            embedding = Lambda(lambda y: tf.squeeze(y, 2))(embedding)
 
-        return
+            predict_layers.append(embedding)
 
-    def create_model(self):
-        temporal_features = ['distance', 'altitude', 'time_elapsed']     # input_dim in their code
-        target_features = ['heart_rate']
+        input_temporal = Input(shape=(num_steps, 2), name='temporal_input')
+        user_inputs.append(input_temporal)
+        lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm')(input_temporal)
+        dense_temporal = Dense(dense_neurons, activation='relu', name='temporal_dense')(lstm_temporal)
+        predict_layers.append(dense_temporal)
 
-        n_temporal = len(temporal_features)
-        n_target = len(target_features)
-        n_steps = 300
+        predict_vector = concatenate(predict_layers)
 
-        input_layer = Input(shape=(n_steps, 3), name='input_time')
+        lstm_out1 = LSTM(lstm_neurons, return_sequences=True, name='lstm_out1')(predict_vector)
+        lstm_result = LSTM(lstm_neurons, return_sequences=True, name='lstm_result')(lstm_out1)
+        output = Dense(1, name='output')(lstm_result)
 
-        lstm = LSTM(self.lstm_neurons, return_sequences=True, name='lstm')(input_layer)
-        dense = Dense(1)(lstm)
-
-        model = keras.Model(inputs=[input_layer], outputs=[dense])
+        model = keras.Model(inputs=user_inputs, outputs=[output])
+        print(model.summary)
 
         model.compile(optimizer='adam',
-                      loss='mse')
-
-        print(model.summary())
+                      loss='mse',
+                      metrics=['mae'])
 
         return model
 
-    def run_model(self, x, y):
-        self.parse_hyperparams()
-        model = self.create_model()
+    @override
+    def preprocess(self):
+        df = super(MoreComplicatedModel, self).load_data()
+        seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
+        inputs = [input_sport, input_gender, seqs]
+        labels = targData
 
-        logdir = get_log_dir(f'{self.model_dir}/tb_logs', 'simple_model')
-        early_stopping_cb = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
-        tensorboard_cb = keras.callbacks.TensorBoard(logdir)
+        return inputs, labels
 
-        model.fit(x, y,
-                  epochs=1000,
-                  callbacks=[early_stopping_cb, tensorboard_cb],
-                  validation_split=0.2)
-
+    @override
     def parse_hyperparams(self):
-        self.lstm_neurons = 100
-        pass
+        if self.testing:
+            hyperparams = {
+                'categorical_features': ['sport', 'gender'],
+                'temporal_features': ['distance', 'altitude', 'time_elapsed'],
+                'embedding_dim': 5,
+                'lstm_neurons': 100,
+                'dense_neurons': 100
+            }
+        else:
+            hyperparams = super(MoreComplicatedModel, self).parse_hyperparams()
+
+        return hyperparams
 
 
 if __name__ == '__main__':
     set_path('saman')
-    df = pd.read_json('./data/male_bike.json')
-    simple_model = SimpleModel(-1)
-    print('here')
-    x, y = create_time_series_data(df, 3)
-    simple_model.run_model(x, y)
+    # data_paths = ['./data/male_run.json',
+    #               './data/female_run.json',
+    #               './data/male_bike.json',
+    #               './data/female_bike.json']
+    #
+    # model = MoreComplicatedModel(run_id=-1,
+    #                              df_paths=data_paths,
+    #                              generate_hyperparams=False,
+    #                              testing=True)
+    # model.run_pipeline()
+
+    data_names = ['male_run',
+                  'female_run',
+                  'male_bike',
+                  'female_bike']
+    # data_names = ['female_bike']
+
+    df = None
+    for data_name in data_names:
+        print(f'./data/{data_name}.json')
+        df_temp = pd.read_json(f'./data/{data_name}.json')
+        if 'male' in data_name:
+            df_temp = df_temp.sample(frac=0.5)
+        if df is None:
+            df = df_temp
+        else:
+            df = pd.concat([df, df_temp])
+        print(len(df_temp))
+        print(len(df))
+        print()
+
+    print(df[['gender', 'sport']].head(16))
+    model = keras.models.load_model(
+        './models/more_complicated/model_weights/more_complicated_2020_12_08-16_29_51.h5')
+
+    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
+
+    inputs = [input_sport, input_gender, seqs]
+
+    for i in range(12):
+        inputs = [input_sport[i].reshape(1, 300, 1),
+                  input_gender[i].reshape(1, 300, 1),
+                  seqs[i].reshape(1, 300, 2)]
+
+        sport = input_sport[i][0]
+        gender = input_gender[i][0]
+
+        pred = model.predict(inputs).reshape(-1)
+        actual = targData[i]
+        plt.subplot(3, 4, i+1)
+        plt.plot(actual, color='r', label='actual')
+        plt.plot(pred, color='b', label='pred')
+        plt.title(f'Gender: {gender}, Sport: {sport}')
+
+    plt.legend()
+    plt.show()

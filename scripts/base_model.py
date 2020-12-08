@@ -62,7 +62,7 @@ class BaseModel:
         logdir = get_log_dir(f'{self.model_dir}/tb_logs', self.model_name)
         savedir = get_save_dir(f'{self.model_dir}/model_weights', self.model_name)
 
-        early_stopping_cb = keras.callbacks.EarlyStopping(patience=1, restore_best_weights=True)
+        early_stopping_cb = keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True)
         tensorboard_cb = keras.callbacks.TensorBoard(logdir)
 
         model.fit(self.inputs, self.labels,

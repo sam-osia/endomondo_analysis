@@ -144,7 +144,7 @@ def remove_first_workout(df):
 
 
 if __name__ == "__main__":
-    set_path("sayeh")
+    set_path("saman")
     df = pd.read_json('./data/female_bike.json')
     newDf = remove_first_workout(df)
     print(newDf.shape)
@@ -156,5 +156,3 @@ if __name__ == "__main__":
     print(input_sport.shape)
     print(input_time_last)
     print(prevData.shape)
-    exit()
-
