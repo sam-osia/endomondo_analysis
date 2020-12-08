@@ -16,8 +16,7 @@ def create_time_series_data(df):
     '''
     df = df.reset_index(drop=True)
 
-    data = np.dstack([np.array(df["time_elapsed"].tolist()),
-                      np.array(df["distance"].tolist()),
+    data = np.dstack([np.array(df["tar_derived_speed"].tolist()),
                       np.array(df["altitude"].tolist())])
     targData = np.array(df["tar_heart_rate"].tolist()).reshape(-1, 300, 1)
 
@@ -87,50 +86,75 @@ def clean_time(row):
     return row
 
 def curr_preprocess(df):
-    for feature in ["time_elapsed", "distance", "altitude"]:
-        df[feature] = scaleData(df, feature)
-    seqs, targData = create_time_series_data(df)
+    df['prevId'] = prev_wid(df)
+    df['time_last'] = df['id'].apply(lambda x: time_since_last(x, df))
+    df = prev_dataframe(df)
 
+    for feature in ["tar_derived_speed", "altitude", "tar_heart_rate"]:
+        df[feature] = scaleData(df, feature)
+
+    df = remove_first_workout(df)
+    df.reset_index(drop=True, inplace=True)
+
+    seqs, targData = create_time_series_data(df)
 
     input_gender = process_catData(df, 'gender')
     input_sport = process_catData(df, 'sport')
+    input_time_last = np.tile(df.time_last, (300, 1)).T.reshape(-1, 300, 1)
 
-    df['prevId'] = prev_wid(df)
-    time_last = df['id'].apply(lambda x: time_since_last(x, df))
-    input_time_last = np.tile(time_last, (300, 1)).T.reshape(-1, 300, 1)
-
-    mergeDF = prev_dataframe(df)
-    prevData = prev_time_series_data(mergeDF)
+    prevData = prev_time_series_data(df)
     return seqs, input_gender, input_sport, input_time_last, prevData, targData
+
 
 def prev_dataframe(df):
     #df["prevID"] = prev_wid(df)
-    df2 = df[["time_elapsed", "distance", "altitude", "tar_heart_rate", "id"]][:]
-    df2.rename(columns={"time_elapsed": "prev_time_elapsed",
-                        "distance": "prev_distance",
+    df2 = df[["tar_derived_speed", "altitude", "tar_heart_rate", "id"]][:]
+    df2.rename(columns={"tar_derived_speed": "prev_tar_speed",
                         "altitude": "prev_altitude",
                         "tar_heart_rate": "prev_tar_heart_rate",
                         "id": "id"}, inplace=True)
     prevDf = pd.DataFrame({"pid": df["prevId"]})
     prevDf = prevDf.merge(df2, left_on="pid", right_on="id")
     mergeDF = df.merge(prevDf, left_on="prevId", right_on="pid")
+    mergeDF.rename(columns={"id_x": "id"}, inplace=True)
     return mergeDF
 
 def prev_time_series_data(mergeDF):
-    data = np.dstack([np.array(mergeDF["prev_time_elapsed"].tolist()),
-                      np.array(mergeDF["prev_distance"].tolist()),
+    data = np.dstack([np.array(mergeDF["prev_tar_speed"].tolist()),
                       np.array(mergeDF["prev_altitude"].tolist()),
                       np.array(mergeDF["prev_tar_heart_rate"].tolist())])
     return data
 
+def remove_first_workout(df):
+    df_list = []
+    uList = df['userId'].unique()
+    for u in uList:
+        u_df = df[df['userId'] == u]
+        wid = u_df['id']
+        t = u_df['timestamp']
+        startT = t.apply(lambda x: x[0])
+
+        myList = list(zip(startT, wid))
+        myList = sorted(myList, key=lambda x: x[0])
+
+        for i in myList[1:]:
+            j = i[1]
+            df_list.append(df[df['id'] == j][:])
+    return pd.concat(df_list)
+
+
 if __name__ == "__main__":
     set_path("sayeh")
     df = pd.read_json('./data/female_bike.json')
-    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
+    newDf = remove_first_workout(df)
+    print(newDf.shape)
+    print(df.shape)
+    print(len(df.userId.unique()))
+    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(newDf)
     print(seqs.shape)
     print(input_gender.shape)
     print(input_sport.shape)
-    print(input_time_last.shape)
+    print(input_time_last)
     print(prevData.shape)
     exit()
 
