@@ -19,6 +19,6 @@ source /h/samosia/python_envs/tf2/bin/activate
 export PATH=/pkgs/cuda-10.1/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/pkgs/cuda-10.1/lib64:/pkgs/cudnn-10.1-v7.6.3.30/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 
-python /h/samosia/Git/endomondo_analysis/scripts/simple_model.py >> /h/samosia/Git/endomondo_analysis/logs/test_logs/simple_model.log
+python /h/samosia/Git/endomondo_analysis/scripts/more_complicated_model.py >> /h/samosia/Git/endomondo_analysis/logs/test_logs/more_complicated_model.log
 
 deactivate

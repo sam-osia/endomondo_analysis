@@ -69,8 +69,10 @@ class MoreComplicatedModel(BaseModel):
     @override
     def preprocess(self):
         df = super(MoreComplicatedModel, self).load_data()
-        seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
-        inputs = [input_sport, input_gender, seqs]
+        input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = \
+            curr_preprocess(df)
+        input_temporal = np.dstack([input_speed, input_alt])
+        inputs = [input_sport, input_gender, input_temporal]
         labels = targData
 
         return inputs, labels
@@ -93,59 +95,63 @@ class MoreComplicatedModel(BaseModel):
 
 if __name__ == '__main__':
     set_path('saman')
-    # data_paths = ['./data/male_run.json',
-    #               './data/female_run.json',
-    #               './data/male_bike.json',
-    #               './data/female_bike.json']
-    #
-    # model = MoreComplicatedModel(run_id=-1,
-    #                              df_paths=data_paths,
-    #                              generate_hyperparams=False,
-    #                              testing=True)
-    # model.run_pipeline()
+    data_paths = ['./data/male_run.json',
+                  './data/female_run.json',
+                  './data/male_bike.json',
+                  './data/female_bike.json']
+
+    model = MoreComplicatedModel(run_id=-1,
+                                 df_paths=data_paths,
+                                 generate_hyperparams=False,
+                                 testing=True)
+    model.run_pipeline()
 
     data_names = ['male_run',
                   'female_run',
                   'male_bike',
                   'female_bike']
-    # data_names = ['female_bike']
 
-    df = None
-    for data_name in data_names:
-        print(f'./data/{data_name}.json')
-        df_temp = pd.read_json(f'./data/{data_name}.json')
-        if 'male' in data_name:
-            df_temp = df_temp.sample(frac=0.5)
-        if df is None:
-            df = df_temp
-        else:
-            df = pd.concat([df, df_temp])
-        print(len(df_temp))
-        print(len(df))
-        print()
-
-    print(df[['gender', 'sport']].head(16))
-    model = keras.models.load_model(
-        './models/more_complicated/model_weights/more_complicated_2020_12_08-16_29_51.h5')
-
-    seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
-
-    inputs = [input_sport, input_gender, seqs]
-
-    for i in range(12):
-        inputs = [input_sport[i].reshape(1, 300, 1),
-                  input_gender[i].reshape(1, 300, 1),
-                  seqs[i].reshape(1, 300, 2)]
-
-        sport = input_sport[i][0]
-        gender = input_gender[i][0]
-
-        pred = model.predict(inputs).reshape(-1)
-        actual = targData[i]
-        plt.subplot(3, 4, i+1)
-        plt.plot(actual, color='r', label='actual')
-        plt.plot(pred, color='b', label='pred')
-        plt.title(f'Gender: {gender}, Sport: {sport}')
-
-    plt.legend()
-    plt.show()
+    # df = None
+    # for data_name in data_names:
+    #     print(f'./data/{data_name}.json')
+    #     df_temp = pd.read_json(f'./data/{data_name}.json')
+    #     if 'male' in data_name:
+    #         df_temp = df_temp.sample(frac=0.5)
+    #     if df is None:
+    #         df = df_temp
+    #     else:
+    #         df = pd.concat([df, df_temp])
+    #     print(len(df_temp))
+    #     print(len(df))
+    #     print()
+    #
+    # model = keras.models.load_model(
+    #     './models/more_complicated/model_weights/more_complicated_2020_12_08-16_29_51.h5')
+    #
+    # input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
+    #     = curr_preprocess(df)
+    #
+    # np.save('./data/our_preprocess.npy',
+    #         [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData])
+    #
+    # input_temporal = np.dstack([input_speed, input_alt])
+    #
+    # idx_list = np.random.randint(1, 20000, 12)
+    #
+    # for i, idx in enumerate(idx_list):
+    #     inputs = [input_sport[idx].reshape(1, 300, 1),
+    #               input_gender[idx].reshape(1, 300, 1),
+    #               input_temporal[idx].reshape(1, 300, 2)]
+    #
+    #     sport = input_sport[idx][0]
+    #     gender = input_gender[idx][0]
+    #
+    #     pred = model.predict(inputs).reshape(-1)
+    #     actual = targData[idx]
+    #     plt.subplot(3, 4, i+1)
+    #     plt.plot(actual, color='r', label='actual')
+    #     plt.plot(pred, color='b', label='pred')
+    #     plt.title(f'Gender: {gender}, Sport: {sport}')
+    #
+    # plt.legend()
+    # plt.show()

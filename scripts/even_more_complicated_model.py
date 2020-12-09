@@ -15,9 +15,9 @@ from preprocess import *
 from utils import *
 
 
-class MoreComplicatedModel(BaseModel):
+class EvenMoreComplicatedModel(BaseModel):
     def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False):
-        super(MoreComplicatedModel, self).__init__('more_complicated', run_id, df_paths, generate_hyperparams)
+        super(EvenMoreComplicatedModel, self).__init__('even_more_complicated', run_id, df_paths, generate_hyperparams)
 
         self.hyperparams_range = {
             'lstm_dim': np.arange(30, 101, 10).tolist(),
@@ -67,7 +67,7 @@ class MoreComplicatedModel(BaseModel):
 
     @override
     def preprocess(self):
-        df = super(MoreComplicatedModel, self).load_data()
+        df = super(EvenMoreComplicatedModel, self).load_data()
         seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
         inputs = [input_sport, input_gender, seqs]
         labels = targData
@@ -85,7 +85,7 @@ class MoreComplicatedModel(BaseModel):
                 'dense_neurons': 100
             }
         else:
-            hyperparams = super(MoreComplicatedModel, self).parse_hyperparams()
+            hyperparams = super(EvenMoreComplicatedModel, self).parse_hyperparams()
 
         return hyperparams
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                   './data/male_bike.json',
                   './data/female_bike.json']
 
-    model = MoreComplicatedModel(run_id=-1,
+    model = EvenMoreComplicatedModel(run_id=-1,
                                  df_paths=data_paths,
                                  generate_hyperparams=False,
                                  testing=True)

@@ -70,8 +70,7 @@ class BaseModel:
                   callbacks=[early_stopping_cb, tensorboard_cb],
                   validation_split=0.2)
 
-        weights_dir = get_log_dir(f'{self.model_dir}/model_weights', self.model_name)
-        model.save(weights_dir + '.h5')
+        model.save(savedir)
 
     def preprocess(self):
         inputs = []

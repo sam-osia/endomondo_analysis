@@ -44,6 +44,10 @@ def process_catData(df, feature):
     le = preprocessing.LabelEncoder()
     le.fit(df[feature])
     transfrom_data = le.transform(df[feature])
+    print(f'Feature: {feature}')
+    print(transfrom_data.tolist()[:2])
+    print(list(le.inverse_transform(transfrom_data.tolist()[:2])))
+    print()
     return np.tile(transfrom_data, (300, 1)).T.reshape(-1, 300, 1)
 
 def find_user_workouts(wid, df):
