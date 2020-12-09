@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#SBATCH -p interactive
+#SBATCH --gres=gpu:0
+#SBATCH -c 1
+#SBATCH --mem=4G
+#SBATCH --job-name=test_tensorboard
+#SBATCH --output=tensorboard_%j.log
+#SBATCH --ntasks=1
+
+date;hostname;pwd
+
+source /h/samosia/python_envs/tf2/bin/activate
+
+export PATH=/pkgs/cuda-10.1/bin${PATH:+:${PATH}}
+export LD_LIBRARY_PATH=/pkgs/cuda-10.1/lib64:/pkgs/cudnn-10.1-v7.6.3.30/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
+export XDG_RUNTIME_DIR=""
+tensorboard --logdir ../models/even_more_complicated/tb_logs/ --ip 0.0.0.0 --port 15974
