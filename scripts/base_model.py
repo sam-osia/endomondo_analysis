@@ -70,6 +70,7 @@ class BaseModel:
                   callbacks=[early_stopping_cb, tensorboard_cb],
                   validation_split=0.2)
 
+        print(savedir)
         model.save(savedir)
 
     def preprocess(self):

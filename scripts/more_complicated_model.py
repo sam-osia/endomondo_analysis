@@ -106,11 +106,11 @@ if __name__ == '__main__':
                                  testing=True)
     model.run_pipeline()
 
-    data_names = ['male_run',
-                  'female_run',
-                  'male_bike',
-                  'female_bike']
-
+    # data_names = ['male_run',
+    #               'female_run',
+    #               'male_bike',
+    #               'female_bike']
+    #
     # df = None
     # for data_name in data_names:
     #     print(f'./data/{data_name}.json')

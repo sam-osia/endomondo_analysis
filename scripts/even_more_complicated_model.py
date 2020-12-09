@@ -44,10 +44,17 @@ class EvenMoreComplicatedModel(BaseModel):
             embedding = Lambda(lambda y: tf.squeeze(y, 2))(embedding)
             predict_layers.append(embedding)
 
-        input_temporal = Input(shape=(num_steps, 3), name='temporal_input')
+        input_temporal = Input(shape=(num_steps, 2), name='temporal_input')
         user_inputs.append(input_temporal)
-        lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm')(input_temporal)
-        dense_temporal = Dense(dense_neurons, activation='relu', name='temporal_dense')(lstm_temporal)
+        lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
+
+        input_temporal_prev = Input(shape=(num_steps, 3), name='temporal_input_prev')
+        user_inputs.append(input_temporal_prev)
+        lstm_temporal_prev = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal_prev')(input_temporal_prev)
+
+        context_concat = concatenate([lstm_temporal, lstm_temporal_prev])
+
+        dense_temporal = Dense(dense_neurons, activation='relu', name='temporal_dense')(context_concat)
         predict_layers.append(dense_temporal)
 
         predict_vector = concatenate(predict_layers)
@@ -63,13 +70,19 @@ class EvenMoreComplicatedModel(BaseModel):
                       loss='mse',
                       metrics=['mae'])
 
+        print(model.summary())
+
         return model
 
     @override
     def preprocess(self):
         df = super(EvenMoreComplicatedModel, self).load_data()
-        seqs, input_gender, input_sport, input_time_last, prevData, targData = curr_preprocess(df)
-        inputs = [input_sport, input_gender, seqs]
+        input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = \
+            curr_preprocess(df)
+
+        input_temporal = np.dstack([input_speed, input_alt])
+
+        inputs = [input_sport, input_gender, input_temporal, prevData]
         labels = targData
 
         return inputs, labels
@@ -79,7 +92,7 @@ class EvenMoreComplicatedModel(BaseModel):
         if self.testing:
             hyperparams = {
                 'categorical_features': ['sport', 'gender'],
-                'temporal_features': ['distance', 'altitude', 'time_elapsed'],
+                'temporal_features': ['speed', 'altitude'],
                 'embedding_dim': 5,
                 'lstm_neurons': 100,
                 'dense_neurons': 100
@@ -98,6 +111,8 @@ if __name__ == '__main__':
                   './data/female_run.json',
                   './data/male_bike.json',
                   './data/female_bike.json']
+
+    data_paths = './data/female_bike.json'
 
     model = EvenMoreComplicatedModel(run_id=-1,
                                  df_paths=data_paths,
