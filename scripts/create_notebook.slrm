@@ -3,7 +3,7 @@
 #SBATCH -p interactive
 #SBATCH --gres=gpu:1
 #SBATCH -c 4
-#SBATCH --mem=4G
+#SBATCH --mem=32G
 #SBATCH --job-name=test_jupyter
 #SBATCH --output=jupyter_notebook_%j.log
 #SBATCH --ntasks=1
