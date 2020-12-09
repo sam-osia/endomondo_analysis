@@ -67,7 +67,7 @@ class MoreComplicatedModel(BaseModel):
         return model
 
     @override
-    def preprocess(self):
+    def preprocess(self, **kwargs):
         df = super(MoreComplicatedModel, self).load_data()
         input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = \
             curr_preprocess(df)

@@ -54,8 +54,8 @@ class BaseModel:
 
     def run_pipeline(self):
         self.parse_hyperparams()
-        self.inputs, self.labels = self.preprocess()
         self.hyperparams = self.parse_hyperparams()
+        self.inputs, self.labels = self.preprocess(**self.hyperparams)
 
         model = self.create_model(**self.hyperparams)
 

@@ -48,7 +48,7 @@ class EvenMoreComplicatedModel(BaseModel):
         user_inputs.append(input_temporal)
         lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
 
-        input_temporal_prev = Input(shape=(num_steps, 3), name='temporal_input_prev')
+        input_temporal_prev = Input(shape=(num_steps, 4), name='temporal_input_prev')
         user_inputs.append(input_temporal_prev)
         lstm_temporal_prev = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal_prev')(input_temporal_prev)
 
@@ -75,14 +75,16 @@ class EvenMoreComplicatedModel(BaseModel):
         return model
 
     @override
-    def preprocess(self):
+    def preprocess(self, **kwargs):
         df = super(EvenMoreComplicatedModel, self).load_data()
         input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = \
             curr_preprocess(df)
 
         input_temporal = np.dstack([input_speed, input_alt])
+        # input_prev = prevData
+        input_prev = np.dstack([prevData, input_time_last])
 
-        inputs = [input_sport, input_gender, input_temporal, prevData]
+        inputs = [input_sport, input_gender, input_temporal, input_prev]
         labels = targData
 
         return inputs, labels
@@ -93,6 +95,7 @@ class EvenMoreComplicatedModel(BaseModel):
             hyperparams = {
                 'categorical_features': ['sport', 'gender'],
                 'temporal_features': ['speed', 'altitude'],
+                'temporal_prev_features': ['speed', 'altitude', 'heartRate', 'sinceLast'],
                 'embedding_dim': 5,
                 'lstm_neurons': 100,
                 'dense_neurons': 100
@@ -105,60 +108,60 @@ class EvenMoreComplicatedModel(BaseModel):
 
 if __name__ == '__main__':
     set_path('saman')
-    # data_paths = ['./data/male_run.json',
-    #               './data/female_run.json',
-    #               './data/male_bike.json',
-    #               './data/female_bike.json']
+    data_paths = ['./data/male_run.json',
+                  './data/female_run.json',
+                  './data/male_bike.json',
+                  './data/female_bike.json']
+
+    model = EvenMoreComplicatedModel(run_id=-1,
+                                 df_paths=data_paths,
+                                 generate_hyperparams=False,
+                                 testing=True)
+    model.run_pipeline()
+
+
+    # data_names = ['male_run',
+    #               'female_run',
+    #               'male_bike',
+    #               'female_bike']
     #
-    # model = EvenMoreComplicatedModel(run_id=-1,
-    #                              df_paths=data_paths,
-    #                              generate_hyperparams=False,
-    #                              testing=True)
-    # model.run_pipeline()
-
-
-    data_names = ['male_run',
-                  'female_run',
-                  'male_bike',
-                  'female_bike']
-
-    df = None
-    for data_name in data_names:
-        print(f'./data/{data_name}.json')
-        df_temp = pd.read_json(f'./data/{data_name}.json')
-        if 'female' not in data_name:
-            df_temp = df_temp.sample(frac=0.5)
-        if df is None:
-            df = df_temp
-        else:
-            df = pd.concat([df, df_temp])
-
-    model = keras.models.load_model(
-        './models/even_more_complicated/model_weights/even_more_complicated_2020_12_09-01_04_11.h5')
-
-    input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
-        = curr_preprocess(df)
-
-    input_temporal = np.dstack([input_speed, input_alt])
-
-    idx_list = np.random.randint(1, 20000, 12)
-
-    for plot_ind, i in enumerate(idx_list):
-        inputs = [input_sport[i].reshape(1, 300, 1),
-                  input_gender[i].reshape(1, 300, 1),
-                  input_temporal[i].reshape(1, 300, 2),
-                  prevData[i].reshape(1, 300, 3)]
-
-        sport = input_sport[i][0]
-        gender = input_gender[i][0]
-
-        pred = model.predict(inputs).reshape(-1)
-        actual = targData[i]
-        plt.subplot(3, 4, plot_ind + 1)
-        plt.plot(actual, color='r', label='actual')
-        plt.plot(pred, color='b', label='pred')
-        plt.title(f'Gender: {gender}, Sport: {sport}')
-
-    plt.legend()
-    plt.show()
-
+    # df = None
+    # for data_name in data_names:
+    #     print(f'./data/{data_name}.json')
+    #     df_temp = pd.read_json(f'./data/{data_name}.json')
+    #     if 'female' not in data_name:
+    #         df_temp = df_temp.sample(frac=0.5)
+    #     if df is None:
+    #         df = df_temp
+    #     else:
+    #         df = pd.concat([df, df_temp])
+    #
+    # model = keras.models.load_model(
+    #     './models/even_more_complicated/model_weights/even_more_complicated_2020_12_09-01_04_11.h5')
+    #
+    # input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
+    #     = curr_preprocess(df)
+    #
+    # input_temporal = np.dstack([input_speed, input_alt])
+    #
+    # idx_list = np.random.randint(1, 20000, 12)
+    #
+    # for plot_ind, i in enumerate(idx_list):
+    #     inputs = [input_sport[i].reshape(1, 300, 1),
+    #               input_gender[i].reshape(1, 300, 1),
+    #               input_temporal[i].reshape(1, 300, 2),
+    #               prevData[i].reshape(1, 300, 3)]
+    #
+    #     sport = input_sport[i][0]
+    #     gender = input_gender[i][0]
+    #
+    #     pred = model.predict(inputs).reshape(-1)
+    #     actual = targData[i]
+    #     plt.subplot(3, 4, plot_ind + 1)
+    #     plt.plot(actual, color='r', label='actual')
+    #     plt.plot(pred, color='b', label='pred')
+    #     plt.title(f'Gender: {gender}, Sport: {sport}')
+    #
+    # plt.legend()
+    # plt.show()
+    #
