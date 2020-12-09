@@ -92,6 +92,9 @@ def scaling (row, mean, std, zMultiple=1):
 def scaleData(df, feature):
     flat_data = list(itertools.chain.from_iterable(df[feature].values.flatten()))
     mean, std = np.mean(flat_data), np.std(flat_data)
+    print("\n")
+    print(feature)
+    print(mean, std)
     scaled_feat = df[feature].apply(scaling, args=(mean, std))
     return scaled_feat
 
@@ -103,13 +106,14 @@ def clean_time(row):
 def curr_preprocess(df):
     df['prevId'] = prev_wid(df)
     df['time_last'] = df['id'].apply(lambda x: time_since_last(x, df))
+    df['time_last'] = scaling (df['time_last'] , np.mean(df['time_last'] ), np.std(df['time_last'] ), zMultiple=1)
     df = prev_dataframe(df)
 
     for feature in ["tar_derived_speed", "altitude", "tar_heart_rate"]:
         df[feature] = scaleData(df, feature)
-    print(len(df))
+
     df = remove_first_workout(df)
-    print(len(df))
+
     df.reset_index(drop=True, inplace=True)
 
     #seqs, targData = create_time_series_data(df)
@@ -165,13 +169,15 @@ def remove_first_workout(df):
 if __name__ == "__main__":
     set_path("saman")
     df = pd.read_json('./data/female_bike.json')
-    #newDf = remove_first_workout(df)
-    #print(newDf.shape)
-    print(df.shape)
-    print(len(df.userId.unique()))
+    #df2 = pd.read_json('./data/female_run.json')
+    #df3 = pd.read_json('./data/male_run.json')
+    #df4 = pd.read_json('./data/male_bike.json')
+    #df = pd.concat([df1, df2, df3, df4])
+
     input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = curr_preprocess(df)
     print(input_speed.shape)
     print(input_gender.shape)
     print(input_sport.shape)
     print(input_time_last)
     print(prevData.shape)
+    exit()
