@@ -80,7 +80,7 @@ class MakesSenseVisuallyModel(BaseModel):
     @override
     def preprocess(self, **kwargs):
         df = super(MakesSenseVisuallyModel, self).load_data()
-        input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData = \
+        [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = \
             curr_preprocess(df)
 
         input_temporal = np.dstack([input_speed, input_alt])
@@ -129,8 +129,6 @@ if __name__ == '__main__':
                   'male_bike',
                   'female_bike']
 
-    data_names = ['female_bike']
-
     df = None
     for data_name in data_names:
         print(f'./data/{data_name}.json')
@@ -145,8 +143,13 @@ if __name__ == '__main__':
     model = keras.models.load_model(
         './models/makes_sense_visually/model_weights/makes_sense_visually_2020_12_09-22_55_02.h5')
 
-    input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
+    [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] \
         = curr_preprocess(df)
+
+
+
+
+    exit()
 
     input_prev = np.dstack([prevData, input_time_last])
     idx_list, errors = find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user,

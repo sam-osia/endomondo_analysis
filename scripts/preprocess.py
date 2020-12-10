@@ -104,6 +104,16 @@ def clean_time(row):
     return row
 
 def curr_preprocess(df):
+    if os.path.exists('./data/processed'):
+        outputs = ['input_speed', 'input_alt', 'input_gender', 'input_sport',
+                   'input_user', 'input_time_last', 'prevData', 'targData']
+        out_vars = []
+        for output in outputs:
+            out_var = np.load(f'./data/processed/{output}.npy')
+            out_vars.append(out_var)
+
+        return out_vars
+
     df['prevId'] = prev_wid(df)
     df['time_last'] = df['id'].apply(lambda x: time_since_last(x, df))
     df['time_last'] = scaling (df['time_last'] , np.mean(df['time_last'] ), np.std(df['time_last'] ), zMultiple=1)
@@ -126,7 +136,17 @@ def curr_preprocess(df):
     input_user = process_catData(df, 'userId')
     input_time_last = np.tile(df.time_last, (300, 1)).T.reshape(-1, 300, 1)
     prevData = prev_time_series_data(df)
-    return input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData
+
+    np.save('./data/processed/input_speed.npy', input_speed)
+    np.save('./data/processed/input_alt.npy', input_alt)
+    np.save('./data/processed/input_gender.npy', input_gender)
+    np.save('./data/processed/input_sport.npy', input_sport)
+    np.save('./data/processed/input_user.npy', input_user)
+    np.save('./data/processed/input_time_last.npy', input_time_last)
+    np.save('./data/processed/prevData.npy', prevData)
+    np.save('./data/processed/targData.npy', targData)
+
+    return [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData]
 
 
 def prev_dataframe(df):
