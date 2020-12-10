@@ -11,6 +11,22 @@ import time
 import matplotlib.pyplot as plt
 
 
+def rescale(heart_rates_not_scaled, sigma, meow):
+    '''
+        This function rescales the predicted heart rates in to BPM based on the population meow and sigma
+    '''
+    heart_rates_scaled = []
+    for i in range(len(heart_rates_not_scaled)):
+        hr = np.array(heart_rates_not_scale[i])
+        
+        hr = hr*sigma + mu
+        
+        heart_rates_scaled.append(list(hr))
+        
+        
+    return heart_rates_scaled
+
+
 def set_path(user):
     if user == 'sayeh':
         os.chdir('/Users/sayehbayat/Documents/GIT/endomondo_analysis/')
