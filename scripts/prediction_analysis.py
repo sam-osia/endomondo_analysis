@@ -6,6 +6,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 import matplotlib.pyplot as plt
+from utils import rescale
 
 
 def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData,
@@ -61,11 +62,15 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
 
             pred = model.predict(inputs).reshape(-1)
             actual = targData[i]
-            err = errors[plot_ind]
+            
+            pred_rescaled = rescale(list(pred), 21.11, 137.95)
+            actual_rescaled = rescale(list(actual), 21.11, 137.95)
+            err = mean_absolute_error(np.array(pred_rescaled, actual_rescaled))
+            #err = errors[plot_ind]
             plt.subplot(3, 4, plot_ind + 1)
             plt.plot(actual, color='r', label='actual')
             plt.plot(pred, color='b', label='pred')
-            plt.title(f'Gender: {gender}, Sport: {sport}, Error: {round(err, 1)}')
+            plt.title(f'Gender: {gender}, Sport: {sport}, Error: {round(err, 2)}')
 
         plt.legend()
         plt.show()
