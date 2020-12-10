@@ -21,15 +21,15 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
     OUTPUTS:
         idx_list, errors - index of selected points and their associated error
     '''
+    input_temporal = np.dstack([input_speed, input_alt])
     if best:
-        input_temporal = np.dstack([input_speed, input_alt])
         idx_list = np.arange(input_speed.shape[0])
         errors = np.zeros(idx_list.shape[0])
         for plot_ind, i in enumerate(idx_list):
             inputs = [input_sport[i].reshape(1, 300, 1),
                       input_gender[i].reshape(1, 300, 1),
                       input_temporal[i].reshape(1, 300, 2),
-                      prevData[i].reshape(1, 300, 3)]
+                      prevData[i].reshape(1, 300, 4)]
             pred = model.predict(inputs).reshape(-1)
             actual = targData[i]
             errors[plot_ind] = mean_squared_error(pred, actual)
@@ -54,7 +54,7 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
             inputs = [input_sport[i].reshape(1, 300, 1),
                       input_gender[i].reshape(1, 300, 1),
                       input_temporal[i].reshape(1, 300, 2),
-                      prevData[i].reshape(1, 300, 3)]
+                      prevData[i].reshape(1, 300, 4)]
 
             sport = input_sport[i][0]
             gender = input_gender[i][0]

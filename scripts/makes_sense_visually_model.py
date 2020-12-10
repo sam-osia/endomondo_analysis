@@ -11,6 +11,7 @@ import pandas as pd
 import os
 
 from base_model import BaseModel
+from prediction_analysis import find_n_plot
 from preprocess import *
 from utils import *
 
@@ -110,61 +111,45 @@ class MakesSenseVisuallyModel(BaseModel):
 
 if __name__ == '__main__':
     set_path('saman')
-    data_paths = ['./data/male_run.json',
-                  './data/female_run.json',
-                  './data/male_bike.json',
-                  './data/female_bike.json']
+    # data_paths = ['./data/male_run.json',
+    #               './data/female_run.json',
+    #               './data/male_bike.json',
+    #               './data/female_bike.json']
+    #
+    # # data_paths = './data/female_bike.json'
+    #
+    # model = MakesSenseVisuallyModel(run_id=-1,
+    #                                 df_paths=data_paths,
+    #                                 generate_hyperparams=False,
+    #                                 testing=True)
+    # model.run_pipeline()
 
-    # data_paths = './data/female_bike.json'
+    data_names = ['male_run',
+                  'female_run',
+                  'male_bike',
+                  'female_bike']
 
-    model = MakesSenseVisuallyModel(run_id=-1,
-                                    df_paths=data_paths,
-                                    generate_hyperparams=False,
-                                    testing=True)
-    model.run_pipeline()
+    data_names = ['female_bike']
 
-    # data_names = ['male_run',
-    #               'female_run',
-    #               'male_bike',
-    #               'female_bike']
-    #
-    # df = None
-    # for data_name in data_names:
-    #     print(f'./data/{data_name}.json')
-    #     df_temp = pd.read_json(f'./data/{data_name}.json')
-    #     if 'female' not in data_name:
-    #         df_temp = df_temp.sample(frac=0.5)
-    #     if df is None:
-    #         df = df_temp
-    #     else:
-    #         df = pd.concat([df, df_temp])
-    #
-    # model = keras.models.load_model(
-    #     './models/even_more_complicated/model_weights/even_more_complicated_2020_12_09-01_04_11.h5')
-    #
-    # input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
-    #     = curr_preprocess(df)
-    #
-    # input_temporal = np.dstack([input_speed, input_alt])
-    #
-    # idx_list = np.random.randint(1, 20000, 12)
-    #
-    # for plot_ind, i in enumerate(idx_list):
-    #     inputs = [input_sport[i].reshape(1, 300, 1),
-    #               input_gender[i].reshape(1, 300, 1),
-    #               input_temporal[i].reshape(1, 300, 2),
-    #               prevData[i].reshape(1, 300, 3)]
-    #
-    #     sport = input_sport[i][0]
-    #     gender = input_gender[i][0]
-    #
-    #     pred = model.predict(inputs).reshape(-1)
-    #     actual = targData[i]
-    #     plt.subplot(3, 4, plot_ind + 1)
-    #     plt.plot(actual, color='r', label='actual')
-    #     plt.plot(pred, color='b', label='pred')
-    #     plt.title(f'Gender: {gender}, Sport: {sport}')
-    #
-    # plt.legend()
-    # plt.show()
-    #
+    df = None
+    for data_name in data_names:
+        print(f'./data/{data_name}.json')
+        df_temp = pd.read_json(f'./data/{data_name}.json')
+        if 'female' not in data_name:
+            df_temp = df_temp.sample(frac=0.5)
+        if df is None:
+            df = df_temp
+        else:
+            df = pd.concat([df, df_temp])
+
+    model = keras.models.load_model(
+        './models/makes_sense_visually/model_weights/makes_sense_visually_2020_12_09-22_55_02.h5')
+
+    input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData \
+        = curr_preprocess(df)
+
+    input_prev = np.dstack([prevData, input_time_last])
+    idx_list, errors = find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user,
+                                   input_time_last, input_prev, targData, model, 12, True, True)
+
+
