@@ -73,7 +73,7 @@ class BaseModel:
         print(savedir)
         model.save(savedir)
 
-    def preprocess(self):
+    def preprocess(self, **kwargs):
         inputs = []
         outputs = []
         return inputs, outputs
