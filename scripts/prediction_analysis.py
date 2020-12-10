@@ -5,8 +5,104 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import numpy as np
 from scipy.optimize import minimize
 
+import matplotlib.pyplot as plt
 
-def prediction_analysis(data):
+
+def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData,
+                model, num, to_plot, best):
+    '''
+    This function finds the best num_best predictions from the data set, returns their indices, and plots them
+    INPUTS
+        input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData
+        model - ..well model duh
+        num - number of best results that should be kept
+        to_plot - if True, best will be plotted
+        best - if true, the best ones are found. Otherwise, randomly selected
+    OUTPUTS:
+        idx_list, errors - index of selected points and their associated error
+    '''
+    if best:
+        input_temporal = np.dstack([input_speed, input_alt])
+        idx_list = np.arange(input_speed.shape[0])
+        errors = np.zeros(idx_list.shape[0])
+        for plot_ind, i in enumerate(idx_list):
+            inputs = [input_sport[i].reshape(1, 300, 1),
+                      input_gender[i].reshape(1, 300, 1),
+                      input_temporal[i].reshape(1, 300, 2),
+                      prevData[i].reshape(1, 300, 3)]
+            pred = model.predict(inputs).reshape(-1)
+            actual = targData[i]
+            errors[plot_ind] = mean_squared_error(pred, actual)
+
+        idx_best = np.argsort(errors)[:num]
+        idx_list = idx_list[idx_best]
+        errors = errors[idx_best]
+    else:
+        idx_list = np.random.randint(1, input_speed.shape[0], num)
+        errors = np.zeros(idx_list.shape[0])
+        for plot_ind, i in enumerate(idx_list):
+            inputs = [input_sport[i].reshape(1, 300, 1),
+                      input_gender[i].reshape(1, 300, 1),
+                      input_temporal[i].reshape(1, 300, 2),
+                      prevData[i].reshape(1, 300, 3)]
+            pred = model.predict(inputs).reshape(-1)
+            actual = targData[i]
+            errors[plot_ind] = mean_squared_error(pred, actual)
+
+    if to_plot:
+        for plot_ind, i in enumerate(idx_list):
+            inputs = [input_sport[i].reshape(1, 300, 1),
+                      input_gender[i].reshape(1, 300, 1),
+                      input_temporal[i].reshape(1, 300, 2),
+                      prevData[i].reshape(1, 300, 3)]
+
+            sport = input_sport[i][0]
+            gender = input_gender[i][0]
+
+            pred = model.predict(inputs).reshape(-1)
+            actual = targData[i]
+            err = errors[plot_ind]
+            plt.subplot(3, 4, plot_ind + 1)
+            plt.plot(actual, color='r', label='actual')
+            plt.plot(pred, color='b', label='pred')
+            plt.title(f'Gender: {gender}, Sport: {sport}, Error: {round(err, 1)}')
+
+        plt.legend()
+        plt.show()
+
+    return idx_list, errors
+
+
+def analyze_all_predictions(input_temporal, input_gender, input_sport, input_user, input_time_last, prevData, targData,
+                            model):
+    mse_all, mae_all, mae_shape_all, y_pred_modified_all, time_reshaped_all, mae_all_all = [], [], [], [], [], []
+    for i in list(np.arange(input_gender.shape[0])):
+        inputs = [input_sport[i].reshape(1, 300, 1),
+                  input_gender[i].reshape(1, 300, 1),
+                  input_temporal[i].reshape(1, 300, 2),
+                  prevData[i].reshape(1, 300, 3)]
+
+        sport = input_sport[i][0]
+        gender = input_gender[i][0]
+
+        pred = model.predict(inputs).reshape(-1)
+        actual = targData[i]
+
+        # input("going into prediction analysis - Press Enter to continue...")
+
+        mse, mae, mae_shape, y_pred_modified, time_reshaped, mae_all_point = prediction_analysis(actual, pred)
+
+        mse_all.append(mse)
+        mae_all.append(mae)
+        mae_shape_all.append(mae_shape)
+        y_pred_modified_all.append(y_pred_modified)
+        time_reshaped_all.append(time_reshaped)
+        mae_all_all.append(mae_all_point)
+
+    return mse_all, mae_all, mae_shape_all, y_pred_modified_all, time_reshaped_all, mae_all_all
+
+
+def prediction_analysis(y_true, y_pred):
     '''
         This function analyses the predicted heart rate
         INPUT:
@@ -20,44 +116,43 @@ def prediction_analysis(data):
                 time_reshape - reshaped version of time
                 mae_all - mae for each point in time series
     '''
-    
-    data['mse'] = np.nan
-    data['mae'] = np.nan
-    data['mae_shape'] = np.nan
-    data['heart_rate_predicted_reshaped'] = np.nan
-    data['time_reshaped'] = np.nan
-    data['mae_all'] = np.nan
-    
-    for i, row in data.itterrows():
-        y_true = row.heart_rate
-        y_pred = row.heart_rate_predicted
-        time = row.time
-        
-        # calculate mean squared error:
-        data.loc['mse',i] = mean_squared_error(y_true, y_pred)
-        
-        # calculate mean absolute error:
-        data.loc['mae',i] = mean_absolute_error(y_true, y_pred)
-        
-        # calcualte shape error:
-        params_0 = np.zeros((4,1))
-        res = minimize(fun = shape_cost, argms = (y_true, y_pred, time), x0 = params_0, options = {'maxiter':1000})
+    time = np.arange(y_true.shape[0])
 
-        params_best = res.x.reshape((-1,1))
-        data.loc['mae_shape', i] = shape_cost(params_best, y_true, y_pred, time)
-        y_pred_modified, time_modified =  modify_prediction(params_best, y_pred, time)
-        data.loc['heart_rate_predicted_reshaped', i] = list(y_pred_modified)
-        data.loc['time_reshaped', i] = list(time_modified)
-        
-        
-        # calculate accumulation of errors:
-        data.loc['mae_all',i] = list(np.linalg.norm(y_true-y_pred, axis = 1))
-        
-        
-    return data
+    # calculate mean squared error:
+    mse = mean_squared_error(y_true, y_pred)
 
-      
-        
+    # calculate mean absolute error:
+    mae = mean_absolute_error(y_true, y_pred)
+
+    # calcualte shape error:
+    params_0 = np.zeros((4, 1))
+    # y_true += 10
+    # y_pred +=10
+    res = minimize(fun=shape_cost, args=(y_true, y_pred, time), x0=params_0, options={'maxiter': 1000})
+
+    params_best = res.x.reshape((-1, 1))
+    mae_shape = shape_cost(params_best, y_true, y_pred, time)
+    y_pred_modified, time_modified = modify_prediction(params_best, y_pred, time)
+
+    y_pred_modified = list(y_pred_modified)
+
+    time_reshaped = list(time_modified)
+
+    '''
+    plt.plot(time, y_true, color = 'r', label ='true')
+    plt.plot(time, y_pred, color = 'b', label = 'predicted')
+    plt.plot(time_reshaped, y_pred_modified, color = 'g', label = 'modified predicted')
+    plt.legend()
+
+    plt.show()
+    '''
+
+    # calculate accumulation of errors:
+    mae_all = list(np.linalg.norm(y_true - y_pred, axis=1))
+
+    return mse, mae, mae_shape, y_pred_modified, time_reshaped, mae_all
+
+
 def shape_cost(params, y_true, y_pred, time):
     '''
         This is the cost function for finding the shape error
@@ -67,31 +162,31 @@ def shape_cost(params, y_true, y_pred, time):
         OUTPUTS:
             error
     '''
-        
-    y_true = y_true.reshape((-1,1))
-    y_pred = y_pred.reshape((-1,1))
-    time = time.reshape((-1,1))
-    
+
+    y_true = y_true.reshape((-1, 1))
+    y_pred = y_pred.reshape((-1, 1))
+    time = time.reshape((-1, 1))
+
     # modify prediction:
     y_pred_modified, time_modified = modify_prediction(params, y_pred, time)
-    
+
     # turn them into pairs:
     y_true = np.hstack((y_true, time))
     y_pred = np.hstack((y_pred_modified, time_modified))
-    
+
     # calcualte error:
-    err = np.mean(np.linalg.norm(y_true-y_pred, axis = 1))
-    
+    err = np.mean(np.linalg.norm(y_true - y_pred, axis=1))
+
     return err
-    
+
+
 def modify_prediction(params, y_pred, time):
-    x_scale = params[0,0]
-    y_scale = params[1,0]
-    x_translate = params[2,0]
-    y_translate = params[3,0]
-    
+    x_scale = params[0]
+    y_scale = params[1]
+    x_translate = params[2]
+    y_translate = params[3]
+
     y_pred_modified = y_pred * y_scale + y_translate
     time_modified = time * x_scale + x_translate
-    
+
     return y_pred_modified, time_modified
-        

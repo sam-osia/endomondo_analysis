@@ -17,9 +17,9 @@ def rescale(heart_rates_not_scaled, sigma, meow):
     '''
     heart_rates_scaled = []
     for i in range(len(heart_rates_not_scaled)):
-        hr = np.array(heart_rates_not_scale[i])
+        hr = np.array(heart_rates_not_scaled[i])
         
-        hr = hr*sigma + mu
+        hr = hr*sigma + meow
         
         heart_rates_scaled.append(list(hr))
         
