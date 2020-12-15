@@ -1,3 +1,8 @@
-import numpy as np
+def say_hello(**kwargs):
+    print(f'{a}')
 
-print('hello')
+
+args = {'a': 'hello'}
+say_hello(**args)
+
+

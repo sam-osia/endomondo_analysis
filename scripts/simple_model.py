@@ -10,7 +10,8 @@ from tensorflow.keras.layers import Dense, Lambda, Activation, Embedding, Input,
 from sklearn import preprocessing
 from sklearn.utils import shuffle
 
-from preprocess import create_time_series_data
+from prediction_analysis import find_n_plot
+from preprocess import create_time_series_data, curr_preprocess
 import numpy as np
 import pandas as pd
 import os
@@ -89,6 +90,36 @@ class SimpleModel:
 
 if __name__ == '__main__':
     set_path('saman')
+    # data_names = ['male_run',
+    #               'female_run',
+    #               'male_bike',
+    #               'female_bike']
+    #
+    # df = None
+    # for data_name in data_names:
+    #     print(f'./data/{data_name}.json')
+    #     df_temp = pd.read_json(f'./data/{data_name}.json')
+    #     if 'female' not in data_name:
+    #         df_temp = df_temp.sample(frac=0.5)
+    #     if df is None:
+    #         df = df_temp
+    #     else:
+    #         df = pd.concat([df, df_temp])
+    #     print(len(df_temp))
+    #     print(len(df))
+    #     print()
+    #
+    #
+    #
+    #
+    # df = shuffle(df)
+    #
+    # simple_model = SimpleModel(-1)
+    # print('here')
+    # x, y = create_time_series_data(df, 3)
+    # simple_model.run_model(x, y)
+
+
     data_names = ['male_run',
                   'female_run',
                   'male_bike',
@@ -104,13 +135,16 @@ if __name__ == '__main__':
             df = df_temp
         else:
             df = pd.concat([df, df_temp])
-        print(len(df_temp))
-        print(len(df))
-        print()
 
-    df = shuffle(df)
 
-    simple_model = SimpleModel(-1)
-    print('here')
-    x, y = create_time_series_data(df, 3)
-    simple_model.run_model(x, y)
+
+    model = keras.models.load_model(
+        './models/makes_sense_visually/model_weights/makes_sense_visually_2020_12_09-22_55_02.h5')
+
+    [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] \
+        = curr_preprocess(df)
+
+    input_prev = np.dstack([prevData, input_time_last])
+
+    idx_list, errors = find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user,
+                                   input_time_last, input_prev, targData, model, 12, True, True)

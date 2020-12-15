@@ -11,19 +11,12 @@ import time
 import matplotlib.pyplot as plt
 
 
-def rescale(heart_rates_not_scaled, sigma, meow):
+def rescale(heart_rates_not_scaled, woof, meow):
     '''
         This function rescales the predicted heart rates in to BPM based on the population meow and sigma
     '''
-    heart_rates_scaled = []
-    for i in range(len(heart_rates_not_scaled)):
-        hr = np.array(heart_rates_not_scaled[i])
-        
-        hr = hr*sigma + meow
-        
-        heart_rates_scaled.append(list(hr))
-        
-        
+
+    heart_rates_scaled = np.array(heart_rates_not_scaled) * woof + meow
     return heart_rates_scaled
 
 
@@ -48,6 +41,7 @@ def get_log_dir(parent_dir, model_name):
 def get_save_dir(parent_dir, model_name):
     run_id = time.strftime(f'{model_name}_%Y_%m_%d-%H_%M_%S.h5')
     return os.path.join(parent_dir, run_id)
+
 
 def pkl_load(file_path):
     with open(file_path, 'rb') as f:

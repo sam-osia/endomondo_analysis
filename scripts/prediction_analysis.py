@@ -23,6 +23,7 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
         idx_list, errors - index of selected points and their associated error
     '''
     input_temporal = np.dstack([input_speed, input_alt])
+    print('here')
     if best:
         idx_list = np.arange(input_speed.shape[0])
         errors = np.zeros(idx_list.shape[0])
@@ -34,8 +35,9 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
             pred = model.predict(inputs).reshape(-1)
             actual = targData[i]
             errors[plot_ind] = mean_squared_error(pred, actual)
+            print(plot_ind)
 
-        idx_best = np.argsort(errors)[:num]
+        idx_best = np.flip(np.argsort(errors))[:num]
         idx_list = idx_list[idx_best]
         errors = errors[idx_best]
     else:
@@ -49,7 +51,7 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
             pred = model.predict(inputs).reshape(-1)
             actual = targData[i]
             errors[plot_ind] = mean_squared_error(pred, actual)
-
+    print('here')
     if to_plot:
         for plot_ind, i in enumerate(idx_list):
             inputs = [input_sport[i].reshape(1, 300, 1),
@@ -62,17 +64,21 @@ def find_n_plot(input_speed, input_alt, input_gender, input_sport, input_user, i
 
             pred = model.predict(inputs).reshape(-1)
             actual = targData[i]
-            
-            pred_rescaled = rescale(list(pred), 21.11, 137.95)
-            actual_rescaled = rescale(list(actual), 21.11, 137.95)
-            err = mean_absolute_error(np.array(pred_rescaled, actual_rescaled))
+
+            pred_rescaled = pred #rescale(pred, 21.11, 137.95)
+
+            actual_rescaled = actual #rescale(actual, 21.11, 137.95)
+
+            err = mean_absolute_error(pred_rescaled, actual_rescaled)
             #err = errors[plot_ind]
             plt.subplot(3, 4, plot_ind + 1)
-            plt.plot(actual, color='r', label='actual')
-            plt.plot(pred, color='b', label='pred')
+            plt.plot(actual_rescaled, color='r', label='actual')
+            plt.plot(pred_rescaled, color='b', label='pred')
             plt.title(f'Gender: {gender}, Sport: {sport}, Error: {round(err, 2)}')
 
         plt.legend()
+        plt.xlim(0, 300)
+        plt.ylim(-3, 3)
         plt.show()
 
     return idx_list, errors

@@ -19,11 +19,15 @@ from utils import *
 
 
 class BaseModel:
-    def __init__(self, model_name='base_model', run_id=None, df_paths=None, generate_hyperparams=False):
+    def __init__(self, model_name='base_model', run_id=None, df_paths=None, generate_hyperparams=False,
+                 load_existing=False, preprocessed_path=None, model_tag=None):
         assert run_id is not None
         self.model_name = model_name
         self.run_id = run_id
         self.df_paths = df_paths
+        self.load_existing = load_existing
+        self.preprocessed_path = preprocessed_path
+        self.model_tag = model_tag
 
         self.model_dir = f'./models/{self.model_name}'
         self.hyperparams_dir = os.path.join(self.model_dir, 'hyperparameters')
@@ -54,13 +58,12 @@ class BaseModel:
 
     def run_pipeline(self):
         self.parse_hyperparams()
-        self.hyperparams = self.parse_hyperparams()
         self.inputs, self.labels = self.preprocess(**self.hyperparams)
 
         model = self.create_model(**self.hyperparams)
 
-        logdir = get_log_dir(f'{self.model_dir}/tb_logs', self.model_name)
-        savedir = get_save_dir(f'{self.model_dir}/model_weights', self.model_name)
+        logdir = get_log_dir(f'{self.model_dir}/tb_logs', self.model_name + f'_{self.model_tag}')
+        savedir = get_save_dir(f'{self.model_dir}/model_weights', self.model_name + f'_{self.model_tag}')
 
         early_stopping_cb = keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True)
         tensorboard_cb = keras.callbacks.TensorBoard(logdir)
@@ -77,7 +80,6 @@ class BaseModel:
         inputs = []
         outputs = []
         return inputs, outputs
-
 
     def load_data(self):
         df = None
