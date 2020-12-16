@@ -16,10 +16,10 @@ from preprocess import *
 from utils import *
 
 
-class MakesSenseVisuallyModel(BaseModel):
+class SayehModel(BaseModel):
     def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False, hyperparams=None,
                  load_existing=False, preprocessed_name=None, model_tag=None):
-        super(MakesSenseVisuallyModel, self).__init__('makes_sense_visually', run_id, df_paths, generate_hyperparams,
+        super(SayehModel, self).__init__('sayeh_model', run_id, df_paths, generate_hyperparams,
                                                       load_existing, preprocessed_name, model_tag)
 
         self.hyperparams_range = {
@@ -84,7 +84,7 @@ class MakesSenseVisuallyModel(BaseModel):
     @override
     def preprocess(self, categorical_features, **kwargs):
         if not self.load_existing:
-            df = super(MakesSenseVisuallyModel, self).load_data()
+            df = super(SayehModel, self).load_data()
             [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = \
                 curr_preprocess(df)
         else:
@@ -121,7 +121,7 @@ class MakesSenseVisuallyModel(BaseModel):
                     'dense_neurons': 100
                 }
         else:
-            self.hyperparams = super(MakesSenseVisuallyModel, self).parse_hyperparams()
+            self.hyperparams = super(SayehModel, self).parse_hyperparams()
 
         print(self.hyperparams)
         return self.hyperparams
@@ -139,9 +139,9 @@ if __name__ == '__main__':
         'categorical_features': ['sport', 'gender'],
         'temporal_features': ['speed', 'altitude'],
         'temporal_prev_features': ['speed', 'altitude', 'heartRate', 'sinceLast'],
-        'embedding_dim': 20,
-        'lstm_neurons': 100,
-        'dense_neurons': 100
+        'embedding_dim': 50,
+        'lstm_neurons': 200,
+        'dense_neurons': 200
     }
 
     genderless_hyperparams = {
@@ -169,16 +169,16 @@ if __name__ == '__main__':
                          'bike': sportless_hyperparams}
 
     preprocessed_name = 'all'
-    hyperparams = all_hyperparams
+    hyperparams = genderless_hyperparams
 
-    model = MakesSenseVisuallyModel(run_id=-1,
-                                    df_paths=data_paths,
-                                    generate_hyperparams=False,
-                                    testing=True,
-                                    load_existing=True,
-                                    preprocessed_name=preprocessed_name,
-                                    model_tag=None,
-                                    hyperparams=hyperparams)
+    model = SayehModel(run_id=-1,
+                       df_paths=data_paths,
+                       generate_hyperparams=False,
+                       testing=True,
+                       load_existing=True,
+                       preprocessed_name=preprocessed_name,
+                       model_tag='all_genderless',
+                       hyperparams=hyperparams)
 
     model.run_pipeline()
 

@@ -16,10 +16,10 @@ from preprocess import *
 from utils import *
 
 
-class MakesSenseVisuallyModel(BaseModel):
+class MakesEvenMoreSenseVisuallyModel(BaseModel):
     def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False, hyperparams=None,
                  load_existing=False, preprocessed_name=None, model_tag=None):
-        super(MakesSenseVisuallyModel, self).__init__('makes_sense_visually', run_id, df_paths, generate_hyperparams,
+        super(MakesEvenMoreSenseVisuallyModel, self).__init__('makes_even_more_sense_visually', run_id, df_paths, generate_hyperparams,
                                                       load_existing, preprocessed_name, model_tag)
 
         self.hyperparams_range = {
@@ -40,6 +40,7 @@ class MakesSenseVisuallyModel(BaseModel):
         # initialize array that the model expects as an input
         user_inputs = []
 
+        context_layers = []
         predict_layers = []
         # categorical features layers:
         for category in categorical_features:
@@ -47,23 +48,22 @@ class MakesSenseVisuallyModel(BaseModel):
             user_inputs.append(input)
             embedding = Embedding(input_dim=2, output_dim=embedding_dim, name=f'{category}_embedding')(input)
             embedding = Lambda(lambda y: tf.squeeze(y, 2))(embedding)
-            predict_layers.append(embedding)
+            context_layers.append(embedding)
 
         input_temporal = Input(shape=(num_steps, 2), name='temporal_input')
         user_inputs.append(input_temporal)
-        # lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
+        lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
+        predict_layers.append(lstm_temporal)
 
-        input_temporal_prev = Input(shape=(num_steps, 3), name='temporal_input_prev')
-        predict_layers.append(input_temporal_prev)
+        input_temporal_prev = Input(shape=(num_steps, 4), name='temporal_input_prev')
         user_inputs.append(input_temporal_prev)
-        # lstm_temporal_prev = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal_prev')(input_temporal_prev)
+        lstm_temporal_prev = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal_prev')(input_temporal_prev)
+        context_layers.append(lstm_temporal_prev)
 
-        # context_concat = concatenate([lstm_temporal, lstm_temporal_prev])
+        context_vector = concatenate(context_layers)
+        dense_context = Dense(5, activation='relu')(context_vector)
+        predict_layers.append(dense_context)
 
-        # dense_temporal = Dense(dense_neurons, activation='relu', name='temporal_dense')(context_concat)
-        # predict_layers.append(dense_temporal)
-
-        predict_layers.append(input_temporal)
         predict_vector = concatenate(predict_layers)
 
         lstm_out1 = LSTM(lstm_neurons, return_sequences=True, name='lstm_out1')(predict_vector)
@@ -78,13 +78,12 @@ class MakesSenseVisuallyModel(BaseModel):
                       metrics=['mae'])
 
         print(model.summary())
-
         return model
 
     @override
     def preprocess(self, categorical_features, **kwargs):
         if not self.load_existing:
-            df = super(MakesSenseVisuallyModel, self).load_data()
+            df = super(MakesEvenMoreSenseVisuallyModel, self).load_data()
             [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = \
                 curr_preprocess(df)
         else:
@@ -92,9 +91,8 @@ class MakesSenseVisuallyModel(BaseModel):
                 curr_preprocess(None, load_exist=True, dataset_name=self.preprocessed_path)
 
         input_temporal = np.dstack([input_speed, input_alt])
+        input_prev = np.dstack([prevData, input_time_last])
         # input_prev = prevData
-        # input_prev = np.dstack([prevData, input_time_last])
-        input_prev = prevData
         inputs = []
 
         if 'sport' in categorical_features:
@@ -121,7 +119,7 @@ class MakesSenseVisuallyModel(BaseModel):
                     'dense_neurons': 100
                 }
         else:
-            self.hyperparams = super(MakesSenseVisuallyModel, self).parse_hyperparams()
+            self.hyperparams = super(MakesEvenMoreSenseVisuallyModel, self).parse_hyperparams()
 
         print(self.hyperparams)
         return self.hyperparams
@@ -171,14 +169,14 @@ if __name__ == '__main__':
     preprocessed_name = 'all'
     hyperparams = all_hyperparams
 
-    model = MakesSenseVisuallyModel(run_id=-1,
-                                    df_paths=data_paths,
-                                    generate_hyperparams=False,
-                                    testing=True,
-                                    load_existing=True,
-                                    preprocessed_name=preprocessed_name,
-                                    model_tag=None,
-                                    hyperparams=hyperparams)
+    model = MakesEvenMoreSenseVisuallyModel(run_id=-1,
+                                            df_paths=data_paths,
+                                            generate_hyperparams=False,
+                                            testing=True,
+                                            load_existing=True,
+                                            preprocessed_name=preprocessed_name,
+                                            model_tag=None,
+                                            hyperparams=hyperparams)
 
     model.run_pipeline()
 

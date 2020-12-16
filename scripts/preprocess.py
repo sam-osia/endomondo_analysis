@@ -205,18 +205,16 @@ if __name__ == "__main__":
     df3 = pd.read_json('./data/male_run.json')
     df4 = pd.read_json('./data/male_bike.json')
 
-    # print('processing all female')
-    # curr_preprocess(pd.concat([df1, df2]), load_exist=False, dataset_name='female')
-    # print('processing all male')
-    # curr_preprocess(pd.concat([df3, df4]), load_exist=False, dataset_name='male')
-    # print('processing all run')
-    # curr_preprocess(pd.concat([df2, df4]), load_exist=False, dataset_name='run')
-    # print('processing all bike')
-    # curr_preprocess(pd.concat([df1, df3]), load_exist=False, dataset_name='bike')
+    print('processing all female')
+    curr_preprocess(pd.concat([df1, df2]), load_exist=False, dataset_name='female')
+    print('processing all male')
+    curr_preprocess(pd.concat([df3, df4]), load_exist=False, dataset_name='male')
+    print('processing all run')
+    curr_preprocess(pd.concat([df2, df4]), load_exist=False, dataset_name='run')
+    print('processing all bike')
+    curr_preprocess(pd.concat([df1, df3]), load_exist=False, dataset_name='bike')
     print('processing all data')
     curr_preprocess(pd.concat([df1, df2, df3, df4]), load_exist=False, dataset_name='all')
-
-
 
     # [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = curr_preprocess(df1)
     # print(input_speed.shape)

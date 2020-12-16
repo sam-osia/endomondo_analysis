@@ -16,10 +16,10 @@ from preprocess import *
 from utils import *
 
 
-class MakesSenseVisuallyModel(BaseModel):
+class KasraModel(BaseModel):
     def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False, hyperparams=None,
                  load_existing=False, preprocessed_name=None, model_tag=None):
-        super(MakesSenseVisuallyModel, self).__init__('makes_sense_visually', run_id, df_paths, generate_hyperparams,
+        super(KasraModel, self).__init__('kasra_model', run_id, df_paths, generate_hyperparams,
                                                       load_existing, preprocessed_name, model_tag)
 
         self.hyperparams_range = {
@@ -40,6 +40,7 @@ class MakesSenseVisuallyModel(BaseModel):
         # initialize array that the model expects as an input
         user_inputs = []
 
+        categorical_layers = []
         predict_layers = []
         # categorical features layers:
         for category in categorical_features:
@@ -47,23 +48,28 @@ class MakesSenseVisuallyModel(BaseModel):
             user_inputs.append(input)
             embedding = Embedding(input_dim=2, output_dim=embedding_dim, name=f'{category}_embedding')(input)
             embedding = Lambda(lambda y: tf.squeeze(y, 2))(embedding)
-            predict_layers.append(embedding)
+            categorical_layers.append(embedding)
+
+        categorical_vector = concatenate(categorical_layers)
+        dense_cat = Dense(20, activation='relu')(categorical_vector)
+
+        input_since_last = Input(shape=(num_steps, 1), name='input_since_last')
+        user_inputs.append(input_since_last)
+
+        context_cat_vector = concatenate([dense_cat, input_since_last])
+        context_cat_lstm = LSTM(20, return_sequences=True, name='context_cat_lstm')(context_cat_vector)
+        predict_layers.append(context_cat_lstm)
 
         input_temporal = Input(shape=(num_steps, 2), name='temporal_input')
         user_inputs.append(input_temporal)
-        # lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
+        lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal')(input_temporal)
+        predict_layers.append(lstm_temporal)
 
         input_temporal_prev = Input(shape=(num_steps, 3), name='temporal_input_prev')
-        predict_layers.append(input_temporal_prev)
         user_inputs.append(input_temporal_prev)
-        # lstm_temporal_prev = LSTM(lstm_neurons, return_sequences=True, name='lstm_temporal_prev')(input_temporal_prev)
+        prev_lstm_temporal = LSTM(lstm_neurons, return_sequences=True, name='lstm_prev_temporal')(input_temporal_prev)
+        predict_layers.append(prev_lstm_temporal)
 
-        # context_concat = concatenate([lstm_temporal, lstm_temporal_prev])
-
-        # dense_temporal = Dense(dense_neurons, activation='relu', name='temporal_dense')(context_concat)
-        # predict_layers.append(dense_temporal)
-
-        predict_layers.append(input_temporal)
         predict_vector = concatenate(predict_layers)
 
         lstm_out1 = LSTM(lstm_neurons, return_sequences=True, name='lstm_out1')(predict_vector)
@@ -78,13 +84,12 @@ class MakesSenseVisuallyModel(BaseModel):
                       metrics=['mae'])
 
         print(model.summary())
-
         return model
 
     @override
     def preprocess(self, categorical_features, **kwargs):
         if not self.load_existing:
-            df = super(MakesSenseVisuallyModel, self).load_data()
+            df = super(KasraModel, self).load_data()
             [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = \
                 curr_preprocess(df)
         else:
@@ -101,8 +106,9 @@ class MakesSenseVisuallyModel(BaseModel):
             inputs.append(input_sport)
         if 'gender' in categorical_features:
             inputs.append(input_gender)
+        inputs.append(input_time_last)
         inputs.append(input_temporal)
-        inputs.append(input_prev)
+        inputs.append(prevData)
 
         labels = targData
 
@@ -121,7 +127,7 @@ class MakesSenseVisuallyModel(BaseModel):
                     'dense_neurons': 100
                 }
         else:
-            self.hyperparams = super(MakesSenseVisuallyModel, self).parse_hyperparams()
+            self.hyperparams = super(KasraModel, self).parse_hyperparams()
 
         print(self.hyperparams)
         return self.hyperparams
@@ -171,14 +177,14 @@ if __name__ == '__main__':
     preprocessed_name = 'all'
     hyperparams = all_hyperparams
 
-    model = MakesSenseVisuallyModel(run_id=-1,
-                                    df_paths=data_paths,
-                                    generate_hyperparams=False,
-                                    testing=True,
-                                    load_existing=True,
-                                    preprocessed_name=preprocessed_name,
-                                    model_tag=None,
-                                    hyperparams=hyperparams)
+    model = KasraModel(run_id=-1,
+                       df_paths=data_paths,
+                       generate_hyperparams=False,
+                       testing=True,
+                       load_existing=True,
+                       preprocessed_name=preprocessed_name,
+                       model_tag='all_genderless',
+                       hyperparams=hyperparams)
 
     model.run_pipeline()
 
