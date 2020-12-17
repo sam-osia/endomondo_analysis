@@ -16,11 +16,11 @@ from preprocess import *
 from utils import *
 
 
-class MakesEvenMoreSenseVisuallyModel(BaseModel):
+class FinalModel(BaseModel):
     def __init__(self, run_id=None, df_paths=None, generate_hyperparams=False, testing=False, hyperparams=None,
                  load_existing=False, preprocessed_name=None, model_tag=None):
-        super(MakesEvenMoreSenseVisuallyModel, self).__init__('makes_even_more_sense_visually', run_id, df_paths, generate_hyperparams,
-                                                      load_existing, preprocessed_name, model_tag)
+        super(FinalModel, self).__init__('final_model', run_id, df_paths, generate_hyperparams,
+                                         load_existing, preprocessed_name, model_tag)
 
         self.hyperparams_range = {
             'lstm_dim': np.arange(30, 101, 10).tolist(),
@@ -83,7 +83,7 @@ class MakesEvenMoreSenseVisuallyModel(BaseModel):
     @override
     def preprocess(self, categorical_features, **kwargs):
         if not self.load_existing:
-            df = super(MakesEvenMoreSenseVisuallyModel, self).load_data()
+            df = super(FinalModel, self).load_data()
             [input_speed, input_alt, input_gender, input_sport, input_user, input_time_last, prevData, targData] = \
                 curr_preprocess(df)
         else:
@@ -119,7 +119,7 @@ class MakesEvenMoreSenseVisuallyModel(BaseModel):
                     'dense_neurons': 100
                 }
         else:
-            self.hyperparams = super(MakesEvenMoreSenseVisuallyModel, self).parse_hyperparams()
+            self.hyperparams = super(FinalModel, self).parse_hyperparams()
 
         print(self.hyperparams)
         return self.hyperparams
@@ -169,14 +169,14 @@ if __name__ == '__main__':
     preprocessed_name = 'all'
     hyperparams = all_hyperparams
 
-    model = MakesEvenMoreSenseVisuallyModel(run_id=-1,
-                                            df_paths=data_paths,
-                                            generate_hyperparams=False,
-                                            testing=True,
-                                            load_existing=True,
-                                            preprocessed_name=preprocessed_name,
-                                            model_tag=None,
-                                            hyperparams=hyperparams)
+    model = FinalModel(run_id=-1,
+                       df_paths=data_paths,
+                       generate_hyperparams=False,
+                       testing=True,
+                       load_existing=True,
+                       preprocessed_name=preprocessed_name,
+                       model_tag=None,
+                       hyperparams=hyperparams)
 
     model.run_pipeline()
 
